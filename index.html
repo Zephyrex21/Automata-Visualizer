@@ -1,0 +1,2419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DFA vs NFA Visual Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #fafafa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f5f5f7;
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-tertiary: #86868b;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --accent-light: rgba(0,113,227,0.12);
+      --border: rgba(0,0,0,0.08);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+      --glass-bg: rgba(255,255,255,0.72);
+      --glass-border: rgba(255,255,255,0.5);
+      --success: #34c759;
+      --error: #ff3b30;
+      --warning: #ff9f0a;
+      --node-default: #e5e5ea;
+      --node-active: #0071e3;
+      --node-accept: #34c759;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #000000;
+      --bg-secondary: #1c1c1e;
+      --bg-tertiary: #2c2c2e;
+      --text-primary: #f5f5f7;
+      --text-secondary: #a1a1a6;
+      --text-tertiary: #636366;
+      --accent: #0a84ff;
+      --accent-hover: #409cff;
+      --accent-light: rgba(10,132,255,0.2);
+      --border: rgba(255,255,255,0.1);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.5);
+      --glass-bg: rgba(28,28,30,0.8);
+      --glass-border: rgba(255,255,255,0.08);
+      --node-default: #3a3a3c;
+      --node-active: #0a84ff;
+      --node-accept: #30d158;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Glassmorphism */
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--text-tertiary);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { 
+        filter: drop-shadow(0 0 8px var(--node-active));
+      }
+      50% { 
+        filter: drop-shadow(0 0 20px var(--node-active));
+      }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes gradient-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+    .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+    .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+    .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Button styles */
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,113,227,0.35);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:focus-visible {
+      outline: 3px solid var(--accent-light);
+      outline-offset: 2px;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+      transform: translateY(-1px);
+    }
+
+    .btn-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-primary);
+    }
+
+    .btn-icon:hover {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-icon:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Card styles */
+    .card {
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+
+    /* Input styles */
+    .input-field {
+      background: var(--bg-tertiary);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 15px;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+      width: 100%;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--bg-secondary);
+      box-shadow: 0 0 0 4px var(--accent-light);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    /* Navbar */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: var(--text-primary);
+      background: var(--accent-light);
+    }
+
+    /* Hero section */
+    .hero-gradient {
+      background: linear-gradient(135deg, 
+        var(--accent-light) 0%, 
+        transparent 50%,
+        rgba(52,199,89,0.08) 100%);
+    }
+
+    /* Simulator canvas area */
+    .canvas-container {
+      background: var(--bg-secondary);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #graphCanvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* Node styles in canvas will be handled by JS */
+
+    /* Status indicator */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-badge.accepted {
+      background: rgba(52,199,89,0.15);
+      color: var(--success);
+    }
+
+    .status-badge.rejected {
+      background: rgba(255,59,48,0.15);
+      color: var(--error);
+    }
+
+    .status-badge.running {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    /* Mode toggle */
+    .mode-toggle {
+      display: flex;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      padding: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .mode-toggle button {
+      flex: 1;
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+    }
+
+    .mode-toggle button.active {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,113,227,0.3);
+    }
+
+    /* Tool panel */
+    .tool-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: transparent;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tool-btn:hover {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .tool-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .tool-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Transition table */
+    .transition-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+
+    .transition-table th,
+    .transition-table td {
+      padding: 12px 16px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .transition-table th {
+      background: var(--bg-tertiary);
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .transition-table th:first-child {
+      border-radius: 10px 0 0 0;
+    }
+
+    .transition-table th:last-child {
+      border-radius: 0 10px 0 0;
+    }
+
+    .transition-table td {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    .transition-table tr:hover td {
+      background: var(--accent-light);
+    }
+
+    /* Feature cards */
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--accent-light), rgba(52,199,89,0.1));
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    /* Section reveal animation */
+    .reveal-section {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reveal-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .tooltip:hover::after {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    /* Mobile menu */
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 72px;
+      left: 0;
+      right: 0;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 20px;
+      z-index: 999;
+    }
+
+    .mobile-menu.open {
+      display: block;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    /* Page sections */
+    .page-section {
+      display: none;
+    }
+
+    .page-section.active {
+      display: block;
+    }
+
+    /* Input string display */
+    .input-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      letter-spacing: 2px;
+      padding: 16px 24px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .input-char {
+      display: inline-block;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .input-char.processed {
+      color: var(--text-tertiary);
+      text-decoration: line-through;
+    }
+
+    .input-char.current {
+      background: var(--accent);
+      color: white;
+      animation: pulse-glow 1s infinite;
+    }
+
+    .input-char.remaining {
+      color: var(--text-primary);
+    }
+
+    /* Theme switcher */
+    .theme-switcher {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .theme-switcher button {
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .theme-switcher button.active {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-switcher button:hover:not(.active) {
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button class="lg:hidden btn-icon" id="menuToggle" aria-label="Toggle menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <a href="#" class="flex items-center gap-3" onclick="showPage('home')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-green-400 flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="6" r="3"></circle>
+              <circle cx="18" cy="18" r="3"></circle>
+              <path d="M9 12h4.5M15 8l-1.5 4M15 16l-1.5-4"></path>
+            </svg>
+          </div>
+          <span class="font-semibold text-lg hidden sm:block">Automata Lab</span>
+        </a>
+      </div>
+
+      <div class="hidden lg:flex items-center gap-2">
+        <a href="#" class="nav-link active" data-page="home" onclick="showPage('home')">Home</a>
+        <a href="#" class="nav-link" data-page="simulator" onclick="showPage('simulator')">Simulator</a>
+        <a href="#" class="nav-link" data-page="learn" onclick="showPage('learn')">Learn</a>
+        <a href="#" class="nav-link" data-page="about" onclick="showPage('about')">About</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="theme-switcher hidden sm:flex">
+          <button onclick="setTheme('light')" data-theme-btn="light" aria-label="Light theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="5"></circle>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+            </svg>
+          </button>
+          <button onclick="setTheme('dark')" data-theme-btn="dark" aria-label="Dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+            </svg>
+          </button>
+          <button onclick="setTheme('system')" data-theme-btn="system" class="active" aria-label="System theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </button>
+        </div>
+        <button class="btn-primary hidden sm:flex items-center gap-2" onclick="showPage('simulator')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Start Simulation
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+      <div class="flex flex-col gap-2">
+        <a href="#" class="nav-link active" onclick="showPage('home'); closeMobileMenu()">Home</a>
+        <a href="#" class="nav-link" onclick="showPage('simulator'); closeMobileMenu()">Simulator</a>
+        <a href="#" class="nav-link" onclick="showPage('learn'); closeMobileMenu()">Learn</a>
+        <a href="#" class="nav-link" onclick="showPage('about'); closeMobileMenu()">About</a>
+        <button class="btn-primary mt-4" onclick="showPage('simulator'); closeMobileMenu()">Start Simulation</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Home Page -->
+  <section id="page-home" class="page-section active">
+    <!-- Hero Section -->
+    <div class="min-h-screen hero-gradient relative overflow-hidden pt-24">
+      <!-- Background decoration -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-20 right-10 w-96 h-96 rounded-full bg-gradient-to-br from-blue-200/30 to-transparent blur-3xl animate-float"></div>
+        <div class="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-gradient-to-tr from-green-200/30 to-transparent blur-3xl animate-float" style="animation-delay: 1s;"></div>
+        
+        <!-- Animated graph preview -->
+        <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] opacity-[0.07] dark:opacity-[0.05]" viewBox="0 0 800 600">
+          <defs>
+            <marker id="arrowhead-hero" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="currentColor"/>
+            </marker>
+          </defs>
+          <!-- States -->
+          <circle cx="150" cy="150" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="400" cy="100" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="650" cy="180" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="250" cy="350" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="550" cy="380" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="650" cy="450" r="40" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="650" cy="450" r="32" fill="none" stroke="currentColor" stroke-width="2"/>
+          
+          <!-- Transitions -->
+          <path d="M195 135 Q280 80 355 105" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead-hero)"/>
+          <path d="M445 110 Q540 120 605 165" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead-hero)"/>
+          <path d="M170 190 Q190 270 230 310" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead-hero)"/>
+          <path d="M295 340 Q400 360 505 370" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead-hero)"/>
+          <path d="M585 395 Q615 420 625 430" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead-hero)"/>
+          <path d="M695 210 Q720 320 675 415" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#arrowhead-hero)"/>
+          
+          <!-- Labels -->
+          <text x="275" y="90" fill="currentColor" font-size="16" font-family="monospace">a</text>
+          <text x="520" y="125" fill="currentColor" font-size="16" font-family="monospace">b</text>
+          <text x="175" y="260" fill="currentColor" font-size="16" font-family="monospace">b</text>
+          <text x="395" y="345" fill="currentColor" font-size="16" font-family="monospace">a</text>
+          <text x="590" y="420" fill="currentColor" font-size="16" font-family="monospace">b</text>
+          <text x="705" y="320" fill="currentColor" font-size="16" font-family="monospace">a</text>
+        </svg>
+      </div>
+
+      <div class="max-w-7xl mx-auto px-6 py-20 lg:py-32 relative z-10">
+        <div class="grid lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-light text-accent text-sm font-medium mb-8 animate-fade-in-up stagger-1">
+              <span class="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+              Interactive Learning Tool
+            </div>
+            
+            <h1 class="text-5xl lg:text-7xl font-bold leading-tight mb-6 animate-fade-in-up stagger-2" style="letter-spacing: -0.03em;">
+              DFA vs NFA<br>
+              <span class="bg-gradient-to-r from-blue-500 via-blue-600 to-green-500 bg-clip-text text-transparent">Visual Simulator</span>
+            </h1>
+            
+            <p class="text-xl text-text-secondary mb-10 max-w-lg animate-fade-in-up stagger-3" style="color: var(--text-secondary);">
+              Master the fundamentals of automata theory through interactive visualization. Build, simulate, and understand deterministic and non-deterministic finite automata.
+            </p>
+            
+            <div class="flex flex-wrap gap-4 animate-fade-in-up stagger-4">
+              <button class="btn-primary flex items-center gap-3" onclick="showPage('simulator')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Start Simulation
+              </button>
+              <button class="btn-secondary flex items-center gap-2" onclick="showPage('learn')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                </svg>
+                Learn Concepts
+              </button>
+            </div>
+          </div>
+
+          <div class="hidden lg:block animate-fade-in-up stagger-3">
+            <div class="relative">
+              <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-green-500/20 rounded-3xl blur-3xl"></div>
+              <div class="relative glass rounded-3xl p-8 shadow-xl">
+                <div class="flex items-center gap-3 mb-6">
+                  <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                  <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                  <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                  <span class="ml-4 text-sm font-medium" style="color: var(--text-tertiary);">automata-simulator.js</span>
+                </div>
+                <pre class="font-mono text-sm leading-relaxed overflow-hidden"><code style="color: var(--text-secondary);"><span style="color: #ff6b6b;">class</span> <span style="color: var(--accent);">FiniteAutomaton</span> {
+  <span style="color: #ff6b6b;">constructor</span>(type) {
+    <span style="color: var(--text-tertiary);">// DFA | NFA</span>
+    <span style="color: var(--text-primary);">this</span>.type = type;
+    <span style="color: var(--text-primary);">this</span>.states = [];
+    <span style="color: var(--text-primary);">this</>.transitions = {};
+  }
+
+  <span style="color: var(--accent);">process</span>(input) {
+    <span style="color: #ff6b6b;">let</span> current = <span style="color: var(--text-primary);">this</span>.startState;
+    
+    <span style="color: #ff6b6b;">for</span> (<span style="color: #ff6b6b;">const</span> symbol <span style="color: #ff6b6b;">of</span> input) {
+      current = <span style="color: var(--text-primary);">this</span>.<span style="color: var(--accent);">transition</span>(
+        current, symbol
+      );
+    }
+    
+    <span style="color: #ff6b6b;">return</span> <span style="color: var(--text-primary);">this</span>.<span style="color: var(--accent);">isAccepting</span>(current);
+  }
+}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <section class="py-24 lg:py-32" style="background: var(--bg-tertiary);">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16 reveal-section">
+          <h2 class="text-4xl lg:text-5xl font-bold mb-4">Powerful Features</h2>
+          <p class="text-lg max-w-2xl mx-auto" style="color: var(--text-secondary);">
+            Everything you need to understand and experiment with finite automata
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="card reveal-section" style="animation-delay: 0.1s;">
+            <div class="feature-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-3">DFA Mode</h3>
+            <p style="color: var(--text-secondary);">
+              Explore Deterministic Finite Automata where each state has exactly one transition per input symbol. Perfect for understanding predictable computation.
+            </p>
+          </div>
+
+          <div class="card reveal-section" style="animation-delay: 0.2s;">
+            <div class="feature-icon" style="background: linear-gradient(135deg, rgba(255,159,10,0.15), rgba(255,59,48,0.1)); color: #ff9f0a;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-3">NFA Mode</h3>
+            <p style="color: var(--text-secondary);">
+              Experiment with Non-deterministic Finite Automata featuring epsilon transitions and multiple possible paths. See parallel state exploration.
+            </p>
+          </div>
+
+          <div class="card reveal-section" style="animation-delay: 0.3s;">
+            <div class="feature-icon" style="background: linear-gradient(135deg, rgba(52,199,89,0.15), rgba(10,132,255,0.1)); color: #34c759;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-3">Transition Table</h3>
+            <p style="color: var(--text-secondary);">
+              View and edit the complete transition function in tabular form. Easy to read, easy to modify, perfect for formal analysis.
+            </p>
+          </div>
+
+          <div class="card reveal-section" style="animation-delay: 0.4s;">
+            <div class="feature-icon" style="background: linear-gradient(135deg, rgba(175,82,222,0.15), rgba(255,59,48,0.1)); color: #af52de;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-3">Step-by-Step Execution</h3>
+            <p style="color: var(--text-secondary);">
+              Watch your automaton process input character by character. Pause, step forward, or reset at any point during simulation.
+            </p>
+          </div>
+
+          <div class="card reveal-section" style="animation-delay: 0.5s;">
+            <div class="feature-icon" style="background: linear-gradient(135deg, rgba(255,149,0,0.15), rgba(255,59,48,0.1)); color: #ff9500;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-3">Interactive Builder</h3>
+            <p style="color: var(--text-secondary);">
+              Click to add states, drag to reposition, double-click to configure. Intuitive visual editor makes building automata effortless.
+            </p>
+          </div>
+
+          <div class="card reveal-section" style="animation-delay: 0.6s;">
+            <div class="feature-icon" style="background: linear-gradient(135deg, rgba(10,132,255,0.15), rgba(52,199,89,0.1)); color: #0a84ff;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20V10"></path>
+                <path d="M18 20V4"></path>
+                <path d="M6 20v-4"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-3">NFA to DFA Conversion</h3>
+            <p style="color: var(--text-secondary);">
+              Convert any NFA to its equivalent DFA automatically. Visualize the subset construction algorithm in real-time.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-24 lg:py-32">
+      <div class="max-w-4xl mx-auto px-6 text-center reveal-section">
+        <h2 class="text-4xl lg:text-5xl font-bold mb-6">Ready to Explore Automata?</h2>
+        <p class="text-xl mb-10" style="color: var(--text-secondary);">
+          Start building and simulating your first finite automaton now.
+        </p>
+        <button class="btn-primary text-lg px-10 py-4" onclick="showPage('simulator')">
+          Launch Simulator
+          <svg class="inline ml-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t" style="border-color: var(--border); background: var(--bg-secondary);">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-green-400 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="6" r="3"></circle>
+                <circle cx="18" cy="18" r="3"></circle>
+                <path d="M9 12h4.5M15 8l-1.5 4M15 16l-1.5-4"></path>
+              </svg>
+            </div>
+            <span class="font-semibold">Automata Lab</span>
+          </div>
+          <p class="text-sm" style="color: var(--text-tertiary);">
+            Built for education. Designed for clarity.
+          </p>
+        </div>
+      </div>
+    </footer>
+  </section>
+
+  <!-- Simulator Page -->
+  <section id="page-simulator" class="page-section pt-24 min-h-screen" style="background: var(--bg-primary);">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <!-- Header -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-3xl font-bold mb-2">Simulator</h1>
+          <p style="color: var(--text-secondary);">Build and simulate finite automata interactively</p>
+        </div>
+        
+        <div class="flex items-center gap-4">
+          <div class="mode-toggle">
+            <button id="dfaModeBtn" class="active" onclick="setMode('DFA')">DFA</button>
+            <button id="nfaModeBtn" onclick="setMode('NFA')">NFA</button>
+          </div>
+          <button class="btn-secondary flex items-center gap-2" onclick="loadExample()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Load Example
+          </button>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-4 gap-6">
+        <!-- Tools Panel -->
+        <div class="lg:col-span-1 space-y-4">
+          <div class="card p-4">
+            <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Tools</h3>
+            <div class="grid grid-cols-3 lg:grid-cols-2 gap-2">
+              <button class="tool-btn active" id="toolSelect" onclick="setTool('select')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+                </svg>
+                Select
+              </button>
+              <button class="tool-btn" id="toolState" onclick="setTool('state')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                </svg>
+                State
+              </button>
+              <button class="tool-btn" id="toolTransition" onclick="setTool('transition')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+                Edge
+              </button>
+              <button class="tool-btn" id="toolStart" onclick="setTool('start')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Start
+              </button>
+              <button class="tool-btn" id="toolAccept" onclick="setTool('accept')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="6"></circle>
+                </svg>
+                Accept
+              </button>
+              <button class="tool-btn" id="toolDelete" onclick="setTool('delete')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Delete
+              </button>
+            </div>
+          </div>
+
+          <div class="card p-4">
+            <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Alphabet</h3>
+            <input type="text" id="alphabetInput" class="input-field text-center text-lg" placeholder="a,b,c" value="a,b" onchange="updateAlphabet()">
+            <p class="text-xs mt-2" style="color: var(--text-tertiary);">Comma-separated symbols</p>
+          </div>
+
+          <div class="card p-4">
+            <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Actions</h3>
+            <div class="space-y-2">
+              <button class="btn-secondary w-full text-sm" onclick="clearAll()">Clear All</button>
+              <button class="btn-secondary w-full text-sm" onclick="autoLayout()">Auto Layout</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="lg:col-span-2">
+          <div class="canvas-container" style="height: 500px;">
+            <canvas id="graphCanvas"></canvas>
+          </div>
+          
+          <!-- Simulation Controls -->
+          <div class="card mt-4 p-4">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div class="flex-1">
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-tertiary);">Input String</label>
+                <input type="text" id="inputString" class="input-field" placeholder="Enter input string..." value="abab">
+              </div>
+              
+              <div class="flex items-center gap-2 sm:self-end">
+                <button class="btn-icon tooltip" id="resetBtn" onclick="resetSimulation()" data-tooltip="Reset">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                  </svg>
+                </button>
+                <button class="btn-icon tooltip" id="prevStepBtn" onclick="prevStep()" data-tooltip="Previous">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                    <line x1="5" y1="19" x2="5" y2="5"></line>
+                  </svg>
+                </button>
+                <button class="btn-icon tooltip" id="playPauseBtn" onclick="togglePlayPause()" data-tooltip="Play/Pause">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="playIcon">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="pauseIcon" style="display:none;">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                  </svg>
+                </button>
+                <button class="btn-icon tooltip" id="nextStepBtn" onclick="nextStep()" data-tooltip="Next Step">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                    <line x1="19" y1="5" x2="19" y2="19"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Input Display -->
+            <div class="mt-4">
+              <label class="block text-sm font-medium mb-2" style="color: var(--text-tertiary);">Processing</label>
+              <div class="input-display" id="inputDisplay">
+                <span class="input-char remaining">a</span><span class="input-char remaining">b</span><span class="input-char remaining">a</span><span class="input-char remaining">b</span>
+              </div>
+            </div>
+
+            <!-- Status -->
+            <div class="mt-4 flex items-center justify-between">
+              <div id="simulationStatus" class="status-badge running">
+                <span class="w-2 h-2 rounded-full bg-current"></span>
+                Ready
+              </div>
+              <div id="currentStateDisplay" class="text-sm font-mono" style="color: var(--text-secondary);">
+                Current: -
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="lg:col-span-1 space-y-4">
+          <div class="card p-4">
+            <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Transition Table</h3>
+            <div class="overflow-x-auto max-h-64 overflow-y-auto">
+              <table class="transition-table" id="transitionTable">
+                <thead>
+                  <tr>
+                    <th>State</th>
+                    <th>a</th>
+                    <th>b</th>
+                  </tr>
+                </thead>
+                <tbody id="transitionTableBody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card p-4">
+            <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Statistics</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span style="color: var(--text-secondary);">States</span>
+                <span class="font-mono font-semibold" id="statStates">0</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span style="color: var(--text-secondary);">Transitions</span>
+                <span class="font-mono font-semibold" id="statTransitions">0</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span style="color: var(--text-secondary);">Start State</span>
+                <span class="font-mono font-semibold" id="statStart">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span style="color: var(--text-secondary);">Accept States</span>
+                <span class="font-mono font-semibold" id="statAccept">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-4">
+            <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Instructions</h3>
+            <ul class="space-y-2 text-sm" style="color: var(--text-secondary);" id="instructionsList">
+              <li class="flex items-start gap-2">
+                <span style="color: var(--accent);">1.</span>
+                Select "State" tool and click canvas to add states
+              </li>
+              <li class="flex items-start gap-2">
+                <span style="color: var(--accent);">2.</span>
+                Select "Edge" tool, click source then target state
+              </li>
+              <li class="flex items-start gap-2">
+                <span style="color: var(--accent);">3.</span>
+                Mark start and accepting states
+              </li>
+              <li class="flex items-start gap-2">
+                <span style="color: var(--accent);">4.</span>
+                Enter input string and run simulation
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Learn Page -->
+  <section id="page-learn" class="page-section pt-24 min-h-screen" style="background: var(--bg-primary);">
+    <div class="max-w-4xl mx-auto px-6 py-12">
+      <h1 class="text-4xl font-bold mb-8">Understanding Finite Automata</h1>
+      
+      <div class="space-y-12">
+        <article class="card reveal-section">
+          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold" style="background: var(--accent);">D</span>
+            Deterministic Finite Automaton (DFA)
+          </h2>
+          <div class="prose max-w-none" style="color: var(--text-secondary);">
+            <p class="mb-4">A <strong style="color: var(--text-primary);">DFA</strong> is a theoretical machine that accepts or rejects strings of symbols. For each combination of current state and input symbol, there is exactly one transition to the next state.</p>
+            
+            <div class="bg-opacity-50 rounded-xl p-4 my-6" style="background: var(--bg-tertiary);">
+              <h4 class="font-semibold mb-2" style="color: var(--text-primary);">Formal Definition:</h4>
+              <p class="font-mono text-sm">A DFA is a 5-tuple (Q, Σ, δ, q₀, F) where:</p>
+              <ul class="mt-2 space-y-1 text-sm">
+                <li><strong>Q</strong> - Finite set of states</li>
+                <li><strong>Σ</strong> - Alphabet (input symbols)</li>
+                <li><strong>δ</strong> - Transition function: Q × Σ → Q</li>
+                <li><strong>q₀</strong> - Initial state</li>
+                <li><strong>F</strong> - Set of accepting/final states</li>
+              </ul>
+            </div>
+
+            <h4 class="font-semibold mb-2" style="color: var(--text-primary);">Key Properties:</h4>
+            <ul class="list-disc list-inside space-y-1">
+              <li>No epsilon (ε) transitions allowed</li>
+              <li>Exactly one transition per symbol from each state</li>
+              <li>Deterministic behavior - no ambiguity</li>
+              <li>Can be implemented efficiently in hardware/software</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="card reveal-section">
+          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold" style="background: linear-gradient(135deg, #ff9f0a, #ff6b6b);">N</span>
+            Non-deterministic Finite Automaton (NFA)
+          </h2>
+          <div class="prose max-w-none" style="color: var(--text-secondary);">
+            <p class="mb-4">An <strong style="color: var(--text-primary);">NFA</strong> allows multiple transitions for the same input symbol from a given state, and may include epsilon (ε) transitions that don't consume input.</p>
+            
+            <div class="bg-opacity-50 rounded-xl p-4 my-6" style="background: var(--bg-tertiary);">
+              <h4 class="font-semibold mb-2" style="color: var(--text-primary);">Formal Definition:</h4>
+              <p class="font-mono text-sm">An NFA is a 5-tuple (Q, Σ, δ, q₀, F) where:</p>
+              <ul class="mt-2 space-y-1 text-sm">
+                <li><strong>Q</strong> - Finite set of states</li>
+                <li><strong>Σ</strong> - Alphabet (input symbols)</li>
+                <li><strong>δ</strong> - Transition function: Q × Σ ∪ {ε} → P(Q)</li>
+                <li><strong>q₀</strong> - Initial state</li>
+                <li><strong>F</strong> - Set of accepting/final states</li>
+              </ul>
+            </div>
+
+            <h4 class="font-semibold mb-2" style="color: var(--text-primary);">Key Properties:</h4>
+            <ul class="list-disc list-inside space-y-1">
+              <li>Multiple transitions per symbol allowed</li>
+              <li>Epsilon (ε) transitions permitted</li>
+              <li>Non-deterministic - multiple paths possible</li>
+              <li>Easier to construct for complex patterns</li>
+              <li>Equivalent power to DFA (can always convert)</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="card reveal-section">
+          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold" style="background: linear-gradient(135deg, #34c759, #30d158);">C</span>
+            NFA to DFA Conversion
+          </h2>
+          <div class="prose max-w-none" style="color: var(--text-secondary);">
+            <p class="mb-4">Every NFA can be converted to an equivalent DFA using the <strong style="color: var(--text-primary);">subset construction algorithm</strong>.</p>
+            
+            <div class="bg-opacity-50 rounded-xl p-4 my-6" style="background: var(--bg-tertiary);">
+              <h4 class="font-semibold mb-3" style="color: var(--text-primary);">Algorithm Steps:</h4>
+              <ol class="list-decimal list-inside space-y-2 text-sm">
+                <li>Create initial DFA state from ε-closure of NFA's start state</li>
+                <li>For each unprocessed DFA state S and input symbol a:<br/>
+                  <span class="ml-6">Compute move(S, a)</span><br/>
+                  <span class="ml-6">Take ε-closure of result</span><br/>
+                  <span class="ml-6">Add as new DFA state if not exists</span></li>
+                <li>A DFA state is accepting if it contains any NFA accepting state</li>
+                <li>Repeat until no new states are created</li>
+              </ol>
+            </div>
+
+            <div class="p-4 rounded-xl border-l-4" style="border-color: var(--warning); background: rgba(255,159,10,0.1);">
+              <p class="text-sm"><strong>Note:</strong> An NFA with n states may produce a DFA with up to 2^n states in the worst case!</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Page -->
+  <section id="page-about" class="page-section pt-24 min-h-screen" style="background: var(--bg-primary);">
+    <div class="max-w-3xl mx-auto px-6 py-12">
+      <div class="text-center mb-12 reveal-section">
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-green-400 flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="6" r="3"></circle>
+            <circle cx="18" cy="18" r="3"></circle>
+            <path d="M9 12h4.5M15 8l-1.5 4M15 16l-1.5-4"></path>
+          </svg>
+        </div>
+        <h1 class="text-4xl font-bold mb-4">About Automata Lab</h1>
+        <p class="text-lg" style="color: var(--text-secondary);">
+          An interactive educational tool for exploring finite automata theory
+        </p>
+      </div>
+
+      <div class="space-y-8">
+        <div class="card reveal-section">
+          <h2 class="text-xl font-bold mb-4">Purpose</h2>
+          <p style="color: var(--text-secondary);">
+            This simulator was designed to make abstract concepts of automata theory tangible and accessible. By providing visual, interactive feedback, students can develop intuition about how DFAs and NFAs process input strings.
+          </p>
+        </div>
+
+        <div class="card reveal-section">
+          <h2 class="text-xl font-bold mb-4">Features</h2>
+          <ul class="space-y-3" style="color: var(--text-secondary);">
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 mt-0.5 flex-shrink-0" style="color: var(--success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Visual graph-based automaton builder
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 mt-0.5 flex-shrink-0" style="color: var(--success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Step-by-step execution with animation
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 mt-0.5 flex-shrink-0" style="color: var(--success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Both DFA and NFA simulation modes
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 mt-0.5 flex-shrink-0" style="color: var(--success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Real-time transition table view
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 mt-0.5 flex-shrink-0" style="color: var(--success);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Example automata for quick learning
+            </li>
+          </ul>
+        </div>
+
+        <div class="card reveal-section">
+          <h2 class="text-xl font-bold mb-4">Technology</h2>
+          <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">HTML5 Canvas</span>
+            <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">Vanilla JavaScript</span>
+            <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">CSS3</span>
+            <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">Tailwind CSS</span>
+          </div>
+        </div>
+
+        <div class="card reveal-section text-center">
+          <p class="mb-4" style="color: var(--text-secondary);">
+            Built with care for computer science education
+          </p>
+          <p class="text-sm" style="color: var(--text-tertiary);">
+            Version 1.0.0
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Transition Symbol Modal -->
+  <div id="symbolModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+    <div class="card max-w-sm w-full p-6 animate-fade-in-up">
+      <h3 class="text-lg font-semibold mb-4">Enter Transition Symbol</h3>
+      <input type="text" id="symbolInput" class="input-field mb-4" placeholder="Symbol (e.g., a, b, ε)">
+      <div class="flex gap-3">
+        <button class="btn-secondary flex-1" onclick="closeSymbolModal()">Cancel</button>
+        <button class="btn-primary flex-1" onclick="confirmTransition()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    // ============================================
+    // INITIALIZATION & GLOBAL STATE
+    // ============================================
+
+    let currentTool = 'select';
+    let currentMode = 'DFA';
+    let states = [];
+    let transitions = [];
+    let alphabet = ['a', 'b'];
+    let startState = null;
+    let acceptStates = new Set();
+
+    // FIX 1: Monotonic counter — never reuses IDs even after deletions
+    let stateCounter = 0;
+
+    // Simulation state
+    let simulationState = {
+      isRunning: false,
+      isPaused: false,
+      currentStep: 0,
+      activeStates: [],
+      processedInput: '',
+      history: []
+    };
+
+    // UI interaction state
+    let selectedState = null;
+    let transitionSource = null;
+    // FIX 7: Store target state ID directly instead of click coordinates
+    let pendingTransitionTargetId = null;
+    let draggingState = null;
+    let dragOffset = { x: 0, y: 0 };
+    let pendingTransition = null;
+    let lastMousePos = null;
+
+    // Canvas setup
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Animation
+    let animationId = null;
+    let playInterval = null;
+
+    // Constants
+    const STATE_RADIUS = 30;
+    const ACCEPT_INNER_RADIUS = 22;
+    const EPSILON = 'ε';
+
+    // ============================================
+    // THEME MANAGEMENT
+    // ============================================
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      setTheme(savedTheme);
+      document.querySelectorAll('[data-theme-btn]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.themeBtn === savedTheme);
+      });
+    }
+
+    function setTheme(theme) {
+      const root = document.documentElement;
+      if (theme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      } else {
+        root.setAttribute('data-theme', theme);
+      }
+      localStorage.setItem('theme', theme);
+      document.querySelectorAll('[data-theme-btn]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.themeBtn === theme);
+      });
+      if (typeof render === 'function') render();
+    }
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (localStorage.getItem('theme') === 'system') setTheme('system');
+    });
+
+    // ============================================
+    // NAVIGATION
+    // ============================================
+
+    function showPage(pageName) {
+      document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+      const targetPage = document.getElementById(`page-${pageName}`);
+      if (targetPage) targetPage.classList.add('active');
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.toggle('active', link.dataset.page === pageName);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (pageName === 'simulator') {
+        resizeCanvas();
+        render();
+      }
+    }
+
+    function closeMobileMenu() {
+      document.getElementById('mobileMenu').classList.remove('open');
+    }
+
+    // ============================================
+    // CANVAS SETUP & RENDERING
+    // ============================================
+
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      render();
+    }
+
+    function getComputedColor(varName) {
+      return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    }
+
+    function render() {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      transitions.forEach(t => drawTransition(t));
+      if (pendingTransition && transitionSource) drawPendingTransition();
+      states.forEach(state => drawState(state));
+      updateTransitionTable();
+      updateStatistics();
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = getComputedColor('--border') || 'rgba(0,0,0,0.05)';
+      ctx.lineWidth = 1;
+      const gridSize = 40;
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawState(state) {
+      const isActive = simulationState.activeStates.includes(state.id);
+      const isStart = startState === state.id;
+      const isAccept = acceptStates.has(state.id);
+      const isSelected = selectedState === state.id;
+
+      const baseColor   = getComputedColor('--node-default') || '#e5e5ea';
+      const activeColor = getComputedColor('--node-active')  || '#0071e3';
+      const acceptColor = getComputedColor('--node-accept')  || '#34c759';
+      const textColor   = getComputedColor('--text-primary') || '#1d1d1f';
+
+      if (isActive) {
+        ctx.save();
+        ctx.shadowColor = activeColor;
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(state.x, state.y, STATE_RADIUS + 5, 0, Math.PI * 2);
+        ctx.fillStyle = activeColor + '30';
+        ctx.fill();
+        ctx.restore();
+      }
+
+      if (isSelected) {
+        ctx.beginPath();
+        ctx.arc(state.x, state.y, STATE_RADIUS + 8, 0, Math.PI * 2);
+        ctx.strokeStyle = activeColor;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      ctx.beginPath();
+      ctx.arc(state.x, state.y, STATE_RADIUS, 0, Math.PI * 2);
+      if (isActive) {
+        ctx.fillStyle = activeColor;
+        ctx.fill();
+        ctx.strokeStyle = activeColor;
+      } else if (isAccept) {
+        ctx.fillStyle = acceptColor + '30';
+        ctx.fill();
+        ctx.strokeStyle = acceptColor;
+      } else {
+        ctx.fillStyle = baseColor;
+        ctx.fill();
+        ctx.strokeStyle = baseColor;
+      }
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      if (isAccept) {
+        ctx.beginPath();
+        ctx.arc(state.x, state.y, ACCEPT_INNER_RADIUS, 0, Math.PI * 2);
+        ctx.strokeStyle = isActive ? '#ffffff88' : acceptColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = isActive ? '#ffffff' : textColor;
+      ctx.font = 'bold 14px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.label, state.x, state.y);
+
+      if (isStart) {
+        const arrowStartX = state.x - STATE_RADIUS - 35;
+        const arrowStartY = state.y;
+        const arrowEndX   = state.x - STATE_RADIUS - 8;
+        const arrowEndY   = state.y;
+
+        ctx.beginPath();
+        ctx.moveTo(arrowStartX, arrowStartY);
+        ctx.lineTo(arrowEndX, arrowEndY);
+        ctx.strokeStyle = textColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const angle = Math.atan2(arrowEndY - arrowStartY, arrowEndX - arrowStartX);
+        ctx.beginPath();
+        ctx.moveTo(arrowEndX, arrowEndY);
+        ctx.lineTo(arrowEndX - 10 * Math.cos(angle - Math.PI / 6), arrowEndY - 10 * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(arrowEndX - 10 * Math.cos(angle + Math.PI / 6), arrowEndY - 10 * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fillStyle = textColor;
+        ctx.fill();
+      }
+    }
+
+    // FIX 2: Compute edge geometry — self-loop determined by ID equality, not pixel distance
+    function getEdgeGeometry(transition) {
+      const fromState = states.find(s => s.id === transition.from);
+      const toState   = states.find(s => s.id === transition.to);
+      if (!fromState || !toState) return null;
+
+      // FIX 2: use ID comparison, not coordinate distance
+      const isSelfLoop = transition.from === transition.to;
+
+      let startX, startY, endX, endY, controlX, controlY;
+
+      if (isSelfLoop) {
+        const loopRadius = 25;
+        startX   = fromState.x + STATE_RADIUS * 0.707;
+        startY   = fromState.y - STATE_RADIUS * 0.707;
+        controlX = fromState.x + loopRadius * 2;
+        controlY = fromState.y - loopRadius * 2.5;
+        endX     = fromState.x - STATE_RADIUS * 0.707 + 2;
+        endY     = fromState.y - STATE_RADIUS * 0.707;
+      } else {
+        const dx    = toState.x - fromState.x;
+        const dy    = toState.y - fromState.y;
+        const angle = Math.atan2(dy, dx);
+        const offset = STATE_RADIUS + 5;
+
+        startX = fromState.x + offset * Math.cos(angle);
+        startY = fromState.y + offset * Math.sin(angle);
+        endX   = toState.x   - offset * Math.cos(angle);
+        endY   = toState.y   - offset * Math.sin(angle);
+
+        const midX        = (fromState.x + toState.x) / 2;
+        const midY        = (fromState.y + toState.y) / 2;
+        const perp        = angle + Math.PI / 2;
+        const curveAmount = 30;
+        controlX = midX + curveAmount * Math.cos(perp);
+        controlY = midY + curveAmount * Math.sin(perp);
+      }
+
+      return { startX, startY, endX, endY, controlX, controlY, isSelfLoop };
+    }
+
+    function drawTransition(transition) {
+      const fromState = states.find(s => s.id === transition.from);
+      const toState   = states.find(s => s.id === transition.to);
+      if (!fromState || !toState) return;
+
+      const geo = getEdgeGeometry(transition);
+      if (!geo) return;
+
+      const { startX, startY, endX, endY, controlX, controlY, isSelfLoop } = geo;
+
+      const textColor   = getComputedColor('--text-primary') || '#1d1d1f';
+      const accentColor = getComputedColor('--accent')       || '#0071e3';
+
+      // FIX 9: Only highlight transition used in the MOST RECENT step, not all history
+      const lastHistory = simulationState.history[simulationState.history.length - 1];
+      const isActive = lastHistory &&
+        lastHistory.transitions &&
+        lastHistory.transitions.some(t =>
+          t.from === transition.from &&
+          t.to   === transition.to   &&
+          t.symbol === transition.symbol
+        );
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+      ctx.strokeStyle = isActive ? accentColor : (getComputedColor('--text-tertiary') || '#86868b');
+      ctx.lineWidth   = isActive ? 3 : 2;
+      if (isActive) { ctx.shadowColor = accentColor; ctx.shadowBlur = 10; }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Arrow head
+      const arrowAngle = Math.atan2(endY - controlY, endX - controlX);
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(endX - 10 * Math.cos(arrowAngle - Math.PI / 6), endY - 10 * Math.sin(arrowAngle - Math.PI / 6));
+      ctx.lineTo(endX - 10 * Math.cos(arrowAngle + Math.PI / 6), endY - 10 * Math.sin(arrowAngle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fillStyle = isActive ? accentColor : (getComputedColor('--text-tertiary') || '#86868b');
+      ctx.fill();
+
+      // Label — for self-loop shift up a bit
+      const labelX = controlX;
+      const labelY = isSelfLoop ? controlY - 15 : controlY;
+
+      ctx.fillStyle = getComputedColor('--bg-secondary') || '#ffffff';
+      ctx.fillRect(labelX - 12, labelY - 10, 24, 20);
+      ctx.fillStyle = textColor;
+      ctx.font = 'bold 13px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(transition.symbol, labelX, labelY);
+    }
+
+    function drawPendingTransition() {
+      const fromState = states.find(s => s.id === transitionSource);
+      if (!fromState) return;
+      const mousePos = lastMousePos || { x: fromState.x + 100, y: fromState.y };
+      ctx.beginPath();
+      ctx.moveTo(fromState.x, fromState.y);
+      ctx.lineTo(mousePos.x, mousePos.y);
+      ctx.strokeStyle = getComputedColor('--accent') || '#0071e3';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // ============================================
+    // STATE MANAGEMENT
+    // ============================================
+
+    function addState(x, y) {
+      // FIX 1: Use monotonic stateCounter — never recycles IDs after deletions
+      const id    = 'q' + stateCounter++;
+      const label = id;
+      states.push({
+        id, label,
+        x: Math.max(STATE_RADIUS + 10, Math.min(canvas.width  - STATE_RADIUS - 10, x)),
+        y: Math.max(STATE_RADIUS + 10, Math.min(canvas.height - STATE_RADIUS - 10, y))
+      });
+      render();
+      return id;
+    }
+
+    function removeState(stateId) {
+      states      = states.filter(s => s.id !== stateId);
+      transitions = transitions.filter(t => t.from !== stateId && t.to !== stateId);
+      if (startState === stateId) startState = null;
+      acceptStates.delete(stateId);
+      if (selectedState === stateId) selectedState = null;
+      render();
+    }
+
+    function addTransition(fromId, toId, symbol) {
+      const existing = transitions.find(t => t.from === fromId && t.to === toId && t.symbol === symbol);
+      if (!existing) {
+        transitions.push({ from: fromId, to: toId, symbol });
+        render();
+      }
+    }
+
+    function removeTransition(fromId, toId, symbol) {
+      transitions = transitions.filter(t => !(t.from === fromId && t.to === toId && t.symbol === symbol));
+      render();
+    }
+
+    function getStateAtPosition(x, y) {
+      for (let i = states.length - 1; i >= 0; i--) {
+        const state = states[i];
+        const dx = x - state.x;
+        const dy = y - state.y;
+        if (dx * dx + dy * dy <= STATE_RADIUS * STATE_RADIUS) return state;
+      }
+      return null;
+    }
+
+    // FIX 8: Use actual Bézier control-point region for hit detection, not straight-line midpoint
+    function getTransitionAtPosition(x, y) {
+      const threshold = 18;
+      for (const t of transitions) {
+        const geo = getEdgeGeometry(t);
+        if (!geo) continue;
+        // The label (and the curve apex) sits at the control point
+        const labelX = geo.controlX;
+        const labelY = geo.isSelfLoop ? geo.controlY - 15 : geo.controlY;
+        const dx = x - labelX;
+        const dy = y - labelY;
+        if (dx * dx + dy * dy <= threshold * threshold) return t;
+      }
+      return null;
+    }
+
+    // ============================================
+    // FIX 3 & 4: EPSILON-CLOSURE (BFS, fully transitive)
+    // ============================================
+    function epsilonClosure(stateIds) {
+      const closure = new Set(stateIds);
+      const queue   = [...stateIds];
+      while (queue.length > 0) {
+        const sid = queue.shift();
+        for (const t of transitions) {
+          if (t.from === sid && t.symbol === EPSILON && !closure.has(t.to)) {
+            closure.add(t.to);
+            queue.push(t.to);
+          }
+        }
+      }
+      return Array.from(closure);
+    }
+
+    // ============================================
+    // TOOL HANDLING
+    // ============================================
+
+    function setTool(tool) {
+      currentTool = tool;
+      transitionSource = null;
+      pendingTransitionTargetId = null;
+      pendingTransition = null;
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.id === 'tool' + tool.charAt(0).toUpperCase() + tool.slice(1));
+      });
+      updateInstructions();
+      render();
+    }
+
+    function updateInstructions() {
+      const instructions = {
+        select:     ['Click on a state to select it', 'Drag states to reposition', 'Click on edges to delete them'],
+        state:      ['Click anywhere on canvas to add a new state', 'States are labeled automatically'],
+        transition: ['Click on source state', 'Then click on target state', 'Enter the transition symbol (use ε for epsilon)'],
+        start:      ['Click on a state to mark it as start', 'Only one start state allowed'],
+        accept:     ['Click on a state to toggle accepting', 'Double circles indicate acceptance'],
+        delete:     ['Click on a state or transition to delete', 'Use carefully - cannot undo']
+      };
+      const list = document.getElementById('instructionsList');
+      if (list) {
+        list.innerHTML = (instructions[currentTool] || []).map((text, i) => `
+          <li class="flex items-start gap-2">
+            <span style="color: var(--accent);">${i + 1}.</span>
+            ${text}
+          </li>
+        `).join('');
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('dfaModeBtn').classList.toggle('active', mode === 'DFA');
+      document.getElementById('nfaModeBtn').classList.toggle('active', mode === 'NFA');
+      resetSimulation();
+      render();
+    }
+
+    // ============================================
+    // SIMULATION ENGINE
+    // ============================================
+
+    function startSimulation() {
+      const inputString = document.getElementById('inputString').value;
+
+      if (!startState) {
+        showStatus('No start state defined', 'rejected');
+        return;
+      }
+
+      // FIX 4: Apply epsilon-closure to the start state before consuming any input
+      const initialStates = epsilonClosure([startState]);
+
+      simulationState = {
+        isRunning: true,
+        isPaused: false,
+        currentStep: 0,
+        activeStates: initialStates,
+        processedInput: '',
+        history: [{ activeStates: initialStates, transitions: [], remainingInput: inputString }]
+      };
+
+      showStatus('Running...', 'running');
+      updateInputDisplay();
+      updateCurrentStateDisplay();
+      render();
+
+      // FIX 5: Empty string is a valid input — check acceptance immediately
+      if (inputString.length === 0) {
+        finishSimulation();
+      }
+    }
+
+    function nextStep() {
+      if (!simulationState.isRunning) {
+        startSimulation();
+        return;
+      }
+
+      const inputString  = document.getElementById('inputString').value;
+      const currentIndex = simulationState.processedInput.length;
+
+      if (currentIndex >= inputString.length) {
+        finishSimulation();
+        return;
+      }
+
+      const currentSymbol = inputString[currentIndex];
+      const newActiveStates = [];
+      const usedTransitions = [];   // FIX 9: track per-step transitions
+
+      if (currentMode === 'DFA') {
+        // DFA: only the first active state counts
+        const currentState = simulationState.activeStates[0];
+        const transition   = transitions.find(t => t.from === currentState && t.symbol === currentSymbol);
+        if (transition) {
+          newActiveStates.push(transition.to);
+          usedTransitions.push(transition);
+        }
+      } else {
+        // FIX 3: NFA — apply epsilon-closure transitively after each symbol
+        for (const stateId of simulationState.activeStates) {
+          const matching = transitions.filter(t => t.from === stateId && t.symbol === currentSymbol);
+          for (const t of matching) {
+            if (!newActiveStates.includes(t.to)) {
+              newActiveStates.push(t.to);
+              usedTransitions.push(t);
+            }
+          }
+        }
+        // Full transitive epsilon-closure of all reached states
+        const withEpsilon = epsilonClosure(newActiveStates);
+        for (const sid of withEpsilon) {
+          if (!newActiveStates.includes(sid)) {
+            newActiveStates.push(sid);
+            // Mark epsilon transitions used
+            for (const t of transitions) {
+              if (t.symbol === EPSILON && newActiveStates.includes(t.from) && t.to === sid) {
+                usedTransitions.push(t);
+              }
+            }
+          }
+        }
+      }
+
+      simulationState.history.push({
+        activeStates: [...newActiveStates],
+        transitions:  usedTransitions,     // FIX 9
+        symbol:       currentSymbol
+      });
+
+      simulationState.activeStates  = newActiveStates;
+      simulationState.processedInput += currentSymbol;
+      simulationState.currentStep++;
+
+      updateInputDisplay();
+      updateCurrentStateDisplay();
+      render();
+
+      if (simulationState.processedInput.length >= inputString.length) {
+        finishSimulation();
+      }
+    }
+
+    function prevStep() {
+      if (simulationState.currentStep <= 0) return;
+
+      simulationState.currentStep--;
+      simulationState.history.pop();
+
+      const prevHistory = simulationState.history[simulationState.history.length - 1];
+      if (prevHistory) {
+        simulationState.activeStates   = prevHistory.activeStates || [startState];
+        simulationState.processedInput = simulationState.processedInput.slice(0, -1);
+      } else {
+        simulationState.activeStates   = startState ? epsilonClosure([startState]) : [];
+        simulationState.processedInput = '';
+      }
+
+      showStatus('Running...', 'running');
+      updateInputDisplay();
+      updateCurrentStateDisplay();
+      render();
+    }
+
+    function finishSimulation() {
+      simulationState.isRunning = false;
+      const isAccepted = simulationState.activeStates.some(s => acceptStates.has(s));
+      showStatus(isAccepted ? 'Accepted ✓' : 'Rejected ✗', isAccepted ? 'accepted' : 'rejected');
+      stopAutoPlay();
+      updateInputDisplay();
+      updateCurrentStateDisplay();
+      render();
+    }
+
+    function resetSimulation() {
+      stopAutoPlay();
+      simulationState = {
+        isRunning: false,
+        isPaused:  false,
+        currentStep: 0,
+        activeStates: [],
+        processedInput: '',
+        history: []
+      };
+      showStatus('Ready', 'running');
+      updateInputDisplay();
+      updateCurrentStateDisplay();
+      render();
+    }
+
+    function togglePlayPause() {
+      if (simulationState.isRunning && !simulationState.isPaused) {
+        pauseSimulation();
+      } else {
+        playSimulation();
+      }
+    }
+
+    function playSimulation() {
+      if (!simulationState.isRunning) startSimulation();
+
+      simulationState.isPaused = false;
+      document.getElementById('playIcon').style.display  = 'none';
+      document.getElementById('pauseIcon').style.display = 'block';
+
+      stopAutoPlay();
+      playInterval = setInterval(() => {
+        const inputString = document.getElementById('inputString').value;
+        if (simulationState.processedInput.length >= inputString.length || simulationState.activeStates.length === 0) {
+          stopAutoPlay();
+          finishSimulation();
+        } else {
+          nextStep();
+        }
+      }, 800);
+    }
+
+    function pauseSimulation() {
+      simulationState.isPaused = true;
+      stopAutoPlay();
+      document.getElementById('playIcon').style.display  = 'block';
+      document.getElementById('pauseIcon').style.display = 'none';
+    }
+
+    function stopAutoPlay() {
+      if (playInterval) {
+        clearInterval(playInterval);
+        playInterval = null;
+      }
+      document.getElementById('playIcon').style.display  = 'block';
+      document.getElementById('pauseIcon').style.display = 'none';
+    }
+
+    // ============================================
+    // UI UPDATES
+    // ============================================
+
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('simulationStatus');
+      statusEl.className = `status-badge ${type}`;
+      statusEl.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-current ${type === 'running' ? 'animate-pulse' : ''}"></span>
+        ${message}
+      `;
+    }
+
+    function updateInputDisplay() {
+      const inputString  = document.getElementById('inputString').value;
+      const display      = document.getElementById('inputDisplay');
+      const processedLen = simulationState.processedInput.length;
+
+      let html = '';
+      for (let i = 0; i < inputString.length; i++) {
+        let cls = 'input-char ';
+        if (i < processedLen)       cls += 'processed';
+        else if (i === processedLen) cls += 'current';
+        else                         cls += 'remaining';
+        html += `<span class="${cls}">${inputString[i]}</span>`;
+      }
+      display.innerHTML = html || '<span style="color: var(--text-tertiary);">No input (ε)</span>';
+    }
+
+    function updateCurrentStateDisplay() {
+      const display = document.getElementById('currentStateDisplay');
+      if (simulationState.activeStates.length === 0) {
+        display.textContent = 'Current: ∅ (dead)';
+      } else {
+        const labels = simulationState.activeStates.map(id => {
+          const s = states.find(st => st.id === id);
+          return s ? s.label : id;
+        });
+        display.textContent = `Current: {${labels.join(', ')}}`;
+      }
+    }
+
+    // FIX 11: Show epsilon column in NFA mode
+    function updateTransitionTable() {
+      const tbody = document.getElementById('transitionTableBody');
+      const thead = document.querySelector('#transitionTable thead tr');
+      if (!tbody || !thead) return;
+
+      // Build column list — add ε column in NFA mode
+      const cols = [...alphabet];
+      if (currentMode === 'NFA') cols.push(EPSILON);
+
+      let headerHtml = '<th>State</th>';
+      cols.forEach(sym => { headerHtml += `<th>${sym}</th>`; });
+      thead.innerHTML = headerHtml;
+
+      let bodyHtml = '';
+      states.forEach(state => {
+        const marker = (state.id === startState ? '→' : '') + (acceptStates.has(state.id) ? '*' : '');
+        bodyHtml += `<tr><td style="font-weight:600;">${state.label}${marker ? ' ' + marker : ''}</td>`;
+        cols.forEach(sym => {
+          const targets = transitions
+            .filter(t => t.from === state.id && t.symbol === sym)
+            .map(t => { const ts = states.find(s => s.id === t.to); return ts ? ts.label : '?'; });
+          bodyHtml += `<td>${targets.join(',') || '-'}</td>`;
+        });
+        bodyHtml += '</tr>';
+      });
+
+      tbody.innerHTML = bodyHtml || '<tr><td colspan="99" class="text-center" style="color:var(--text-tertiary);">No states yet</td></tr>';
+    }
+
+    function updateStatistics() {
+      document.getElementById('statStates').textContent      = states.length;
+      document.getElementById('statTransitions').textContent = transitions.length;
+
+      // Show labels, not raw IDs
+      const startLabel = startState
+        ? (states.find(s => s.id === startState)?.label || startState)
+        : '-';
+      document.getElementById('statStart').textContent = startLabel;
+
+      const acceptLabels = acceptStates.size > 0
+        ? Array.from(acceptStates).map(id => states.find(s => s.id === id)?.label || id).join(', ')
+        : '-';
+      document.getElementById('statAccept').textContent = acceptLabels;
+    }
+
+    function updateAlphabet() {
+      const input = document.getElementById('alphabetInput').value;
+      alphabet = input.split(',').map(s => s.trim()).filter(s => s.length > 0);
+      render();
+    }
+
+    // ============================================
+    // EXAMPLE AUTOMATA
+    // ============================================
+
+    // FIX 10: Example is now a proper DFA (no state has two transitions on same symbol)
+    // Accepts strings over {a,b} that END with 'ab'
+    // q0 = start (haven't seen 'a' yet or saw non-a last)
+    // q1 = last symbol was 'a'
+    // q2 = last two symbols were 'ab'  ← accepting
+    function loadExample() {
+      clearAll();
+
+      const cx = canvas.width  / 2;
+      const cy = canvas.height / 2;
+
+      const q0 = addState(cx - 180, cy);
+      const q1 = addState(cx,       cy);
+      const q2 = addState(cx + 180, cy);
+
+      startState = q0;
+      acceptStates.add(q2);
+
+      // q0: 'a' → q1 (might be start of 'ab'),  'b' → q0 (reset)
+      addTransition(q0, q1, 'a');
+      addTransition(q0, q0, 'b');
+
+      // q1: 'a' → q1 (still have trailing 'a'),  'b' → q2 (got 'ab'!)
+      addTransition(q1, q1, 'a');
+      addTransition(q1, q2, 'b');
+
+      // q2: 'a' → q1 (new trailing 'a'),  'b' → q0 (reset, 'b' after 'ab')
+      addTransition(q2, q1, 'a');
+      addTransition(q2, q0, 'b');
+
+      document.getElementById('inputString').value = 'aab';
+      updateInputDisplay();
+      render();
+    }
+
+    function clearAll() {
+      stopAutoPlay();
+      states      = [];
+      transitions = [];
+      startState  = null;
+      acceptStates.clear();
+      selectedState   = null;
+      transitionSource = null;
+      pendingTransitionTargetId = null;
+      // FIX 1: reset counter on full clear so labels restart from q0
+      stateCounter = 0;
+      resetSimulation();
+      render();
+    }
+
+    function autoLayout() {
+      if (states.length === 0) return;
+      const cx     = canvas.width  / 2;
+      const cy     = canvas.height / 2;
+      const radius = Math.min(canvas.width, canvas.height) * 0.3;
+      states.forEach((state, i) => {
+        const angle = (2 * Math.PI * i) / states.length - Math.PI / 2;
+        state.x = cx + radius * Math.cos(angle);
+        state.y = cy + radius * Math.sin(angle);
+      });
+      render();
+    }
+
+    // ============================================
+    // MODAL HANDLING
+    // ============================================
+
+    function openSymbolModal(sourceId, targetId) {
+      transitionSource          = sourceId;
+      // FIX 7: Store target state ID directly
+      pendingTransitionTargetId = targetId;
+      pendingTransition         = { targetX: 0, targetY: 0 }; // keep truthy for render guard
+
+      document.getElementById('symbolModal').classList.remove('hidden');
+      document.getElementById('symbolModal').classList.add('flex');
+      document.getElementById('symbolInput').value = '';
+      document.getElementById('symbolInput').focus();
+    }
+
+    function closeSymbolModal() {
+      document.getElementById('symbolModal').classList.add('hidden');
+      document.getElementById('symbolModal').classList.remove('flex');
+      document.getElementById('symbolInput').value = '';
+      transitionSource          = null;
+      pendingTransitionTargetId = null;
+      pendingTransition         = null;
+      render();
+    }
+
+    function confirmTransition() {
+      const symbol = document.getElementById('symbolInput').value.trim() || 'a';
+      // FIX 7: Use stored target state ID — no coordinate lookup
+      if (transitionSource && pendingTransitionTargetId) {
+        addTransition(transitionSource, pendingTransitionTargetId, symbol);
+      }
+      closeSymbolModal();
+    }
+
+    // ============================================
+    // EVENT HANDLERS
+    // ============================================
+
+    // FIX 6: Always get a fresh bounding rect — never use a stale cached value
+    function getCanvasPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    }
+
+    function handleCanvasClick(e) {
+      const { x, y }     = getCanvasPos(e);  // FIX 6
+      const clickedState = getStateAtPosition(x, y);
+
+      switch (currentTool) {
+        case 'select':
+          selectedState = clickedState ? clickedState.id : null;
+          break;
+
+        case 'state':
+          if (!clickedState) addState(x, y);
+          break;
+
+        case 'transition':
+          if (clickedState) {
+            if (!transitionSource) {
+              transitionSource = clickedState.id;
+              pendingTransition = { targetX: x, targetY: y };
+            } else if (transitionSource !== clickedState.id) {
+              // FIX 7: pass target ID, not coordinates
+              openSymbolModal(transitionSource, clickedState.id);
+            } else {
+              // Clicked source again — cancel
+              transitionSource = null;
+              pendingTransition = null;
+            }
+          }
+          break;
+
+        case 'start':
+          if (clickedState) startState = clickedState.id;
+          break;
+
+        case 'accept':
+          if (clickedState) {
+            if (acceptStates.has(clickedState.id)) acceptStates.delete(clickedState.id);
+            else acceptStates.add(clickedState.id);
+          }
+          break;
+
+        case 'delete':
+          if (clickedState) {
+            removeState(clickedState.id);
+          } else {
+            const clickedTransition = getTransitionAtPosition(x, y);
+            if (clickedTransition) {
+              removeTransition(clickedTransition.from, clickedTransition.to, clickedTransition.symbol);
+            }
+          }
+          break;
+      }
+      render();
+    }
+
+    function handleCanvasMouseDown(e) {
+      if (currentTool !== 'select') return;
+      const { x, y } = getCanvasPos(e);  // FIX 6
+      const state = getStateAtPosition(x, y);
+      if (state) {
+        draggingState = state;
+        dragOffset.x  = x - state.x;
+        dragOffset.y  = y - state.y;
+        canvas.style.cursor = 'grabbing';
+      }
+    }
+
+    function handleCanvasMouseMove(e) {
+      const { x, y } = getCanvasPos(e);  // FIX 6
+      lastMousePos = { x, y };
+
+      if (draggingState) {
+        draggingState.x = Math.max(STATE_RADIUS + 10, Math.min(canvas.width  - STATE_RADIUS - 10, x - dragOffset.x));
+        draggingState.y = Math.max(STATE_RADIUS + 10, Math.min(canvas.height - STATE_RADIUS - 10, y - dragOffset.y));
+        render();
+      } else if (pendingTransition) {
+        pendingTransition.targetX = x;
+        pendingTransition.targetY = y;
+        render();
+      }
+    }
+
+    function handleCanvasMouseUp() {
+      if (draggingState) {
+        draggingState = null;
+        canvas.style.cursor = 'crosshair';
+      }
+    }
+
+    function handleKeyDown(e) {
+      if (document.getElementById('symbolModal').classList.contains('flex')) {
+        if (e.key === 'Escape') closeSymbolModal();
+        if (e.key === 'Enter')  confirmTransition();
+        return;
+      }
+      if (e.target.tagName === 'INPUT') return;
+
+      switch (e.key) {
+        case ' ':         e.preventDefault(); togglePlayPause(); break;
+        case 'ArrowRight': e.preventDefault(); nextStep();       break;
+        case 'ArrowLeft':  e.preventDefault(); prevStep();       break;
+        case 'r': case 'R': resetSimulation(); break;
+        case 'Delete': case 'Backspace':
+          if (selectedState) removeState(selectedState);
+          break;
+      }
+    }
+
+    // ============================================
+    // SCROLL ANIMATIONS
+    // ============================================
+
+    function initScrollAnimations() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+      document.querySelectorAll('.reveal-section').forEach(el => observer.observe(el));
+    }
+
+    function initNavbarScroll() {
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        navbar.classList.toggle('scrolled', window.scrollY > 20);
+      });
+    }
+
+    function initMobileMenu() {
+      const toggle = document.getElementById('menuToggle');
+      const menu   = document.getElementById('mobileMenu');
+      toggle.addEventListener('click', () => menu.classList.toggle('open'));
+    }
+
+    function initInputChangeHandlers() {
+      const inputEl = document.getElementById('inputString');
+      if (inputEl) {
+        inputEl.addEventListener('input', () => {
+          resetSimulation();
+          updateInputDisplay();
+        });
+      }
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    function init() {
+      initTheme();
+      resizeCanvas();
+
+      canvas.addEventListener('click',     handleCanvasClick);
+      canvas.addEventListener('mousedown', handleCanvasMouseDown);
+      canvas.addEventListener('mousemove', handleCanvasMouseMove);
+      canvas.addEventListener('mouseup',   handleCanvasMouseUp);
+      canvas.addEventListener('mouseleave', handleCanvasMouseUp);
+
+      // Touch events
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        handleCanvasMouseDown({ clientX: t.clientX, clientY: t.clientY });
+      }, { passive: false });
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        handleCanvasMouseMove({ clientX: t.clientX, clientY: t.clientY });
+      }, { passive: false });
+      canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleCanvasMouseUp();
+      }, { passive: false });
+
+      document.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('resize', resizeCanvas);
+
+      initScrollAnimations();
+      initNavbarScroll();
+      initMobileMenu();
+      initInputChangeHandlers();
+
+      render();
+      updateInputDisplay();
+      updateInstructions();
+
+      console.log('DFA vs NFA Visual Simulator — all fixes applied');
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
