@@ -1441,10 +1441,10 @@
 
   <!-- Learn Page -->
   <section id="page-learn" class="page-section pt-24 min-h-screen" style="background: var(--bg-primary);">
-    <div class="max-w-4xl mx-auto px-6 py-12">
+    <div class="max-w-6xl mx-auto px-6 py-12">
 
       <!-- Header -->
-      <div class="mb-12 reveal-section">
+      <div class="mb-10 reveal-section">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4" style="background:rgba(52,199,89,0.12);color:#34c759;">
           Theory of Automata · Complete Reference
         </div>
@@ -1452,234 +1452,192 @@
         <p class="text-lg" style="color:var(--text-secondary);">Everything you need to understand the subset construction algorithm, from first principles to worked examples.</p>
       </div>
 
-      <div class="space-y-10">
+      <!-- ══════════════════════════════════════════
+           ROW 1 — DFA  |  NFA
+      ══════════════════════════════════════════ -->
+      <div class="grid md:grid-cols-2 gap-5 mb-5 reveal-section" style="align-items:start;">
 
-        <!-- ═══ 1. DFA ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:var(--accent);">D</span>
-            Deterministic Finite Automaton (DFA)
+        <!-- DFA -->
+        <article class="card h-full">
+          <h2 class="text-xl font-bold mb-3 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:var(--accent);">D</span>
+            Deterministic Finite Automaton
           </h2>
           <div style="color:var(--text-secondary);">
-            <p class="mb-4">A <strong style="color:var(--text-primary);">DFA</strong> is a 5-tuple (Q, Σ, δ, q₀, F) where for every state and every input symbol there is <em>exactly one</em> next state. This makes DFAs directly implementable — a simple table lookup is all that is needed at runtime.</p>
-            <div class="rounded-xl p-4 my-5" style="background:var(--bg-tertiary);">
-              <p class="font-semibold mb-3" style="color:var(--text-primary);">Formal Definition:</p>
-              <ul class="space-y-1 text-sm font-mono">
-                <li><strong>Q</strong> — finite set of states</li>
-                <li><strong>Σ</strong> — input alphabet (finite, no ε)</li>
-                <li><strong>δ : Q × Σ → Q</strong> — total transition function</li>
-                <li><strong>q₀ ∈ Q</strong> — start state</li>
-                <li><strong>F ⊆ Q</strong> — set of accept states</li>
-              </ul>
+            <p class="text-sm mb-3">A <strong style="color:var(--text-primary);">DFA</strong> is a 5-tuple (Q, Σ, δ, q₀, F) where for every state and every input symbol there is <em>exactly one</em> next state — directly implementable as a table lookup.</p>
+            <div class="rounded-xl p-3 mb-3 text-sm font-mono space-y-1" style="background:var(--bg-tertiary);">
+              <p class="font-sans font-semibold text-xs mb-2" style="color:var(--text-primary);">Formal Definition</p>
+              <div><strong>Q</strong> — finite set of states</div>
+              <div><strong>Σ</strong> — input alphabet (no ε)</div>
+              <div><strong>δ : Q × Σ → Q</strong> — total transition</div>
+              <div><strong>q₀ ∈ Q</strong> — start state</div>
+              <div><strong>F ⊆ Q</strong> — accept states</div>
             </div>
-            <div class="grid md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p class="font-semibold mb-2" style="color:var(--text-primary);">Key Properties</p>
-                <ul class="space-y-1 text-sm list-disc list-inside">
-                  <li>Exactly one transition per symbol per state</li>
-                  <li>No epsilon (ε) transitions</li>
+                <p class="font-semibold mb-1" style="color:var(--text-primary);">Key Properties</p>
+                <ul class="space-y-1 list-disc list-inside" style="color:var(--text-secondary);">
+                  <li>Exactly one transition per symbol</li>
+                  <li>No ε transitions</li>
                   <li>Always halts — no ambiguity</li>
-                  <li>Efficient implementation: O(n) per input string</li>
+                  <li>O(n) simulation time</li>
                 </ul>
               </div>
               <div>
-                <p class="font-semibold mb-2" style="color:var(--text-primary);">Why DFA?</p>
-                <ul class="space-y-1 text-sm list-disc list-inside">
-                  <li>Used in lexers, regex engines, network routers</li>
-                  <li>Easier to simulate than NFA</li>
-                  <li>Minimization gives smallest possible machine</li>
-                  <li>Closed under union, intersection, complement</li>
+                <p class="font-semibold mb-1" style="color:var(--text-primary);">Used In</p>
+                <ul class="space-y-1 list-disc list-inside" style="color:var(--text-secondary);">
+                  <li>Lexers & regex engines</li>
+                  <li>Network routers</li>
+                  <li>Hardware circuits</li>
+                  <li>Compiler tokenizers</li>
                 </ul>
               </div>
             </div>
           </div>
         </article>
 
-        <!-- ═══ 2. NFA ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:linear-gradient(135deg,#ff9f0a,#ff6b6b);">N</span>
-            Non-deterministic Finite Automaton (NFA)
+        <!-- NFA -->
+        <article class="card h-full">
+          <h2 class="text-xl font-bold mb-3 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:linear-gradient(135deg,#ff9f0a,#ff6b6b);">N</span>
+            Non-deterministic Finite Automaton
           </h2>
           <div style="color:var(--text-secondary);">
-            <p class="mb-4">An <strong style="color:var(--text-primary);">NFA</strong> is also a 5-tuple (Q, Σ, δ, q₀, F), but the transition function maps to a <em>set</em> of states. A state can have zero, one, or many transitions on the same symbol — and epsilon (ε) transitions that consume no input at all.</p>
-            <div class="rounded-xl p-4 my-5" style="background:var(--bg-tertiary);">
-              <p class="font-semibold mb-3" style="color:var(--text-primary);">Formal Definition:</p>
-              <ul class="space-y-1 text-sm font-mono">
-                <li><strong>Q</strong> — finite set of states</li>
-                <li><strong>Σ</strong> — input alphabet</li>
-                <li><strong>δ : Q × (Σ ∪ {ε}) → P(Q)</strong> — transition to a <em>power set</em> of states</li>
-                <li><strong>q₀ ∈ Q</strong> — start state</li>
-                <li><strong>F ⊆ Q</strong> — accept states</li>
-              </ul>
+            <p class="text-sm mb-3">An <strong style="color:var(--text-primary);">NFA</strong> is also a 5-tuple, but the transition function maps to a <em>set</em> of states — zero, one, or many — and allows ε transitions that consume no input.</p>
+            <div class="rounded-xl p-3 mb-3 text-sm font-mono space-y-1" style="background:var(--bg-tertiary);">
+              <p class="font-sans font-semibold text-xs mb-2" style="color:var(--text-primary);">Formal Definition</p>
+              <div><strong>Q</strong> — finite set of states</div>
+              <div><strong>Σ</strong> — input alphabet</div>
+              <div><strong>δ : Q × (Σ∪{ε}) → P(Q)</strong></div>
+              <div><strong>q₀ ∈ Q</strong> — start state</div>
+              <div><strong>F ⊆ Q</strong> — accept states</div>
             </div>
-            <p class="mb-3">An NFA <strong style="color:var(--text-primary);">accepts</strong> a string if <em>at least one</em> computation path leads to an accept state. It is easier to design NFAs for complex patterns — but they cannot be directly executed without simulation overhead.</p>
-            <div class="p-4 rounded-xl border-l-4" style="border-color:var(--accent);background:var(--accent-light);">
-              <p class="text-sm"><strong style="color:var(--text-primary);">Key insight:</strong> NFA and DFA recognize exactly the same class of languages — the <strong>regular languages</strong>. The subset construction proves this by converting any NFA into an equivalent DFA.</p>
+            <p class="text-sm mb-3">An NFA <strong style="color:var(--text-primary);">accepts</strong> a string if <em>at least one</em> computation path reaches an accept state.</p>
+            <div class="p-3 rounded-xl border-l-4 text-sm" style="border-color:var(--accent);background:var(--accent-light);">
+              <strong style="color:var(--text-primary);">Key insight:</strong> NFA and DFA recognize exactly the same languages — the <strong>regular languages</strong>. The subset construction proves their equivalence.
             </div>
           </div>
         </article>
+      </div>
 
-        <!-- ═══ 3. ε-closure ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:linear-gradient(135deg,#af52de,#ff375f);">ε</span>
+      <!-- ══════════════════════════════════════════
+           ROW 2 — ε-Closure  |  Subset Construction
+      ══════════════════════════════════════════ -->
+      <div class="grid md:grid-cols-2 gap-5 mb-5 reveal-section" style="align-items:start;">
+
+        <!-- ε-Closure -->
+        <article class="card h-full">
+          <h2 class="text-xl font-bold mb-3 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:linear-gradient(135deg,#af52de,#ff375f);">ε</span>
             ε-Closure — The Core Operation
           </h2>
           <div style="color:var(--text-secondary);">
-            <p class="mb-4">The <strong style="color:var(--text-primary);">ε-closure</strong> of a set of states S is the set of all states reachable from any state in S by following <em>zero or more</em> ε-transitions, without consuming any input symbol.</p>
-
-            <div class="rounded-xl p-4 my-5" style="background:var(--bg-tertiary);">
-              <p class="font-semibold mb-2" style="color:var(--text-primary);">Definition:</p>
-              <p class="font-mono text-sm mb-3">ε-closure(S) = { q | q is reachable from some s ∈ S via ε* transitions }</p>
-              <p class="font-semibold mb-2" style="color:var(--text-primary);">Algorithm (BFS):</p>
+            <p class="text-sm mb-3">The <strong style="color:var(--text-primary);">ε-closure</strong> of a set S is all states reachable from any state in S by following <em>zero or more</em> ε-transitions — without consuming any input.</p>
+            <div class="rounded-xl p-3 mb-3" style="background:var(--bg-tertiary);">
+              <p class="font-semibold text-xs mb-1" style="color:var(--text-primary);">BFS Algorithm</p>
               <ol class="list-decimal list-inside space-y-1 text-sm">
-                <li>Add all states in S to the closure and a queue</li>
-                <li>While queue is not empty: pop state q</li>
-                <li>For each ε-transition q →<sup>ε</sup> r: if r not in closure, add r to closure and queue</li>
+                <li>Add all states in S to closure + queue</li>
+                <li>While queue not empty: pop state q</li>
+                <li>For each ε-transition q→r: add r if new</li>
                 <li>Return closure</li>
               </ol>
             </div>
-
-            <p class="font-semibold mb-3" style="color:var(--text-primary);">Worked Example:</p>
-            <p class="mb-3 text-sm">NFA states: {q0, q1, q2, q3}. ε-transitions: q0→q1, q1→q2. What is ε-closure({q0})?</p>
-            <div class="overflow-x-auto">
-              <table class="transition-table text-sm">
-                <thead><tr><th>Step</th><th>Queue</th><th>Closure</th><th>Action</th></tr></thead>
-                <tbody>
-                  <tr><td>Init</td><td>{q0}</td><td>{q0}</td><td>Start with {q0}</td></tr>
-                  <tr><td>1</td><td>{q1}</td><td>{q0, q1}</td><td>q0 →ε q1 → add q1</td></tr>
-                  <tr><td>2</td><td>{q2}</td><td>{q0, q1, q2}</td><td>q1 →ε q2 → add q2</td></tr>
-                  <tr><td>3</td><td>{ }</td><td>{q0, q1, q2}</td><td>q2 has no ε-transitions → done</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <p class="mt-3 text-sm"><strong style="color:var(--text-primary);">Result:</strong> ε-closure({q0}) = {q0, q1, q2}. This becomes the <em>first DFA state</em> in the subset construction.</p>
+            <p class="font-semibold text-sm mb-2" style="color:var(--text-primary);">Worked Example — ε-closure({q0})</p>
+            <p class="text-xs mb-2" style="color:var(--text-tertiary);">ε-transitions: q0→q1, q1→q2</p>
+            <table class="transition-table text-xs">
+              <thead><tr><th>Step</th><th>Queue</th><th>Closure</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td>Init</td><td>{q0}</td><td>{q0}</td><td>Start</td></tr>
+                <tr><td>1</td><td>{q1}</td><td>{q0,q1}</td><td>q0→ε→q1</td></tr>
+                <tr><td>2</td><td>{q2}</td><td>{q0,q1,q2}</td><td>q1→ε→q2</td></tr>
+                <tr><td>3</td><td>{ }</td><td>{q0,q1,q2}</td><td>Done ✓</td></tr>
+              </tbody>
+            </table>
+            <p class="mt-2 text-xs" style="color:var(--text-secondary);">Result <strong style="color:var(--text-primary);">{q0,q1,q2}</strong> becomes the first DFA state.</p>
           </div>
         </article>
 
-        <!-- ═══ 4. Subset Construction ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:linear-gradient(135deg,#34c759,#30d158);">S</span>
+        <!-- Subset Construction -->
+        <article class="card h-full">
+          <h2 class="text-xl font-bold mb-3 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:linear-gradient(135deg,#34c759,#30d158);">S</span>
             Subset Construction Algorithm
           </h2>
           <div style="color:var(--text-secondary);">
-            <p class="mb-4">The <strong style="color:var(--text-primary);">subset construction</strong> (also called the <em>powerset construction</em>) converts an NFA with n states into an equivalent DFA. Each DFA state represents a <em>subset</em> of NFA states — this is why it can produce up to 2ⁿ DFA states in the worst case.</p>
-
-            <div class="rounded-xl p-5 my-5" style="background:var(--bg-tertiary);">
-              <p class="font-semibold mb-3" style="color:var(--text-primary);">Complete Algorithm:</p>
-              <ol class="list-decimal list-inside space-y-3 text-sm">
-                <li><strong>Initialise:</strong> Compute q₀' = ε-closure({q₀<sup>NFA</sup>}). Add q₀' to DFA states and to the worklist.</li>
-                <li><strong>Process:</strong> While the worklist is non-empty, take a DFA state S.</li>
-                <li><strong>For each symbol a ∈ Σ:</strong>
-                  <ul class="list-disc list-inside ml-5 mt-1 space-y-1">
-                    <li>Compute <code>move(S, a)</code> = {t | ∃ s ∈ S with s →<sup>a</sup> t in NFA}</li>
-                    <li>Compute <code>T = ε-closure(move(S, a))</code></li>
-                    <li>If T is not already a DFA state, add it to DFA states and worklist</li>
-                    <li>Add DFA transition δ'(S, a) = T</li>
-                  </ul>
-                </li>
-                <li><strong>Accept states:</strong> A DFA state S is accepting iff S ∩ F<sup>NFA</sup> ≠ ∅</li>
-                <li><strong>Terminate:</strong> When the worklist is empty, the DFA is complete.</li>
+            <p class="text-sm mb-3">Converts an NFA with n states into an equivalent DFA. Each DFA state represents a <em>subset</em> of NFA states — worst case 2ⁿ DFA states, but usually far fewer.</p>
+            <div class="rounded-xl p-3 mb-3" style="background:var(--bg-tertiary);">
+              <p class="font-semibold text-xs mb-2" style="color:var(--text-primary);">Complete Algorithm</p>
+              <ol class="list-decimal list-inside space-y-2 text-sm">
+                <li><strong>Init:</strong> q₀' = ε-closure({q₀<sup>NFA</sup>}) → add to worklist</li>
+                <li><strong>Loop:</strong> Take DFA state S from worklist</li>
+                <li><strong>For each a ∈ Σ:</strong> compute ε-closure(move(S,a)) = T</li>
+                <li>If T is new → add to DFA + worklist; record δ'(S,a)=T</li>
+                <li><strong>Accept:</strong> S is accepting iff S ∩ F<sup>NFA</sup> ≠ ∅</li>
+                <li><strong>Stop</strong> when worklist is empty</li>
               </ol>
             </div>
-
-            <div class="p-4 rounded-xl border-l-4 mb-4" style="border-color:var(--warning);background:rgba(255,159,10,0.1);">
-              <p class="text-sm"><strong>State explosion:</strong> An NFA with n states may produce a DFA with up to <strong>2ⁿ states</strong> (the full power set). In practice, most real NFAs produce far fewer DFA states — many subsets are never reachable.</p>
+            <div class="p-3 rounded-xl border-l-4 text-sm" style="border-color:var(--warning);background:rgba(255,159,10,0.1);">
+              <strong style="color:var(--warning);">Key formula:</strong><br>
+              <span class="font-mono">δ'(S, a) = ε-closure(move(S, a))</span><br>
+              <span class="text-xs mt-1" style="color:var(--text-secondary);">Applied for every DFA state S and every symbol a ∈ Σ</span>
             </div>
           </div>
         </article>
+      </div>
 
-        <!-- ═══ 5. Worked Example 1 ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:linear-gradient(135deg,#0071e3,#30d158);">①</span>
-            Worked Example — Strings Ending in "ab"
+      <!-- ══════════════════════════════════════════
+           ROW 3 — Worked Example 1  |  Worked Example 2
+      ══════════════════════════════════════════ -->
+      <div class="grid md:grid-cols-2 gap-5 mb-5 reveal-section" style="align-items:start;">
+
+        <!-- Worked Example 1 -->
+        <article class="card h-full">
+          <h2 class="text-xl font-bold mb-3 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:linear-gradient(135deg,#0071e3,#34c759);">①</span>
+            Example — Strings ending in "ab"
           </h2>
           <div style="color:var(--text-secondary);">
-            <p class="mb-4">Convert the NFA that accepts strings over {a, b} ending in "ab".</p>
-
-            <div class="rounded-xl p-4 mb-5" style="background:var(--bg-tertiary);">
-              <p class="font-semibold mb-3" style="color:var(--text-primary);">NFA Definition:</p>
-              <p class="text-sm mb-2">States: q0 (start), q1, q2 (accept) &nbsp;·&nbsp; Alphabet: {a, b}</p>
-              <table class="transition-table text-sm">
+            <div class="rounded-xl p-3 mb-3" style="background:var(--bg-tertiary);">
+              <p class="font-semibold text-xs mb-2" style="color:var(--text-primary);">NFA — 3 states, alphabet {a,b}</p>
+              <table class="transition-table text-xs">
                 <thead><tr><th>State</th><th>a</th><th>b</th></tr></thead>
                 <tbody>
-                  <tr><td><strong>→ q0</strong></td><td>{q0, q1}</td><td>{q0}</td></tr>
+                  <tr><td><strong>→ q0</strong></td><td>{q0,q1}</td><td>{q0}</td></tr>
                   <tr><td>q1</td><td>—</td><td>{q2}</td></tr>
                   <tr><td>* q2</td><td>—</td><td>—</td></tr>
                 </tbody>
               </table>
-              <p class="text-xs mt-2" style="color:var(--text-tertiary);">→ = start &nbsp;·&nbsp; * = accept &nbsp;·&nbsp; — = ∅ (dead)</p>
             </div>
-
-            <p class="font-semibold mb-3" style="color:var(--text-primary);">Subset Construction Steps:</p>
-            <div class="space-y-3 text-sm mb-5">
-              <div class="p-3 rounded-xl" style="background:var(--accent-light);border-left:3px solid var(--accent);">
-                <strong style="color:var(--accent);">Step 1 — Initial DFA state A:</strong><br>
-                ε-closure({q0}) = {q0} &nbsp;(no ε-transitions exist) → DFA state <strong>A = {q0}</strong>
-              </div>
-              <div class="p-3 rounded-xl" style="background:rgba(175,82,222,0.08);border-left:3px solid #af52de;">
-                <strong style="color:#af52de;">Step 2 — Process A on "a":</strong><br>
-                move({q0}, a) = {q0, q1} → ε-closure = {q0, q1} → New DFA state <strong>B = {q0, q1}</strong><br>
-                Record: δ'(A, a) = B
-              </div>
-              <div class="p-3 rounded-xl" style="background:rgba(175,82,222,0.08);border-left:3px solid #af52de;">
-                <strong style="color:#af52de;">Step 3 — Process A on "b":</strong><br>
-                move({q0}, b) = {q0} → ε-closure = {q0} = A (already exists)<br>
-                Record: δ'(A, b) = A
-              </div>
-              <div class="p-3 rounded-xl" style="background:rgba(255,149,0,0.08);border-left:3px solid #ff9500;">
-                <strong style="color:#ff9500;">Step 4 — Process B on "a":</strong><br>
-                move({q0,q1}, a) = {q0, q1} → ε-closure = {q0, q1} = B<br>
-                Record: δ'(B, a) = B
-              </div>
-              <div class="p-3 rounded-xl" style="background:rgba(255,149,0,0.08);border-left:3px solid #ff9500;">
-                <strong style="color:#ff9500;">Step 5 — Process B on "b":</strong><br>
-                move({q0,q1}, b) = {q0, q2} → ε-closure = {q0, q2} → New DFA state <strong>C = {q0, q2}</strong><br>
-                C contains q2 (accept) → <strong>C is a DFA accept state ✓</strong><br>
-                Record: δ'(B, b) = C
-              </div>
-              <div class="p-3 rounded-xl" style="background:rgba(52,199,89,0.08);border-left:3px solid #34c759;">
-                <strong style="color:#34c759;">Step 6 — Process C on "a":</strong><br>
-                move({q0,q2}, a) = {q0, q1} = B &nbsp;·&nbsp; Record: δ'(C, a) = B
-              </div>
-              <div class="p-3 rounded-xl" style="background:rgba(52,199,89,0.08);border-left:3px solid #34c759;">
-                <strong style="color:#34c759;">Step 7 — Process C on "b":</strong><br>
-                move({q0,q2}, b) = {q0} = A &nbsp;·&nbsp; Record: δ'(C, b) = A
-              </div>
+            <p class="font-semibold text-sm mb-2" style="color:var(--text-primary);">Conversion steps</p>
+            <div class="space-y-1 text-xs mb-3">
+              <div class="p-2 rounded-lg" style="background:rgba(0,113,227,0.07);border-left:2px solid var(--accent);">A={q0} → on a: {q0,q1}=<strong>B</strong>, on b: {q0}=A</div>
+              <div class="p-2 rounded-lg" style="background:rgba(255,149,0,0.07);border-left:2px solid #ff9500;">B={q0,q1} → on a: {q0,q1}=B, on b: {q0,q2}=<strong>C</strong> ✓accept</div>
+              <div class="p-2 rounded-lg" style="background:rgba(52,199,89,0.07);border-left:2px solid #34c759;">C={q0,q2} → on a: {q0,q1}=B, on b: {q0}=A</div>
             </div>
-
-            <p class="font-semibold mb-3" style="color:var(--text-primary);">Resulting DFA Transition Table:</p>
-            <table class="transition-table text-sm mb-4">
-              <thead><tr><th>DFA State</th><th>NFA Subset</th><th>a</th><th>b</th></tr></thead>
+            <p class="font-semibold text-sm mb-2" style="color:var(--text-primary);">Resulting DFA</p>
+            <table class="transition-table text-xs mb-3">
+              <thead><tr><th>DFA</th><th>Subset</th><th>a</th><th>b</th></tr></thead>
               <tbody>
                 <tr><td><strong>→ A</strong></td><td>{q0}</td><td>B</td><td>A</td></tr>
-                <tr><td>B</td><td>{q0, q1}</td><td>B</td><td>C</td></tr>
-                <tr><td><strong>* C</strong></td><td>{q0, q2}</td><td>B</td><td>A</td></tr>
+                <tr><td>B</td><td>{q0,q1}</td><td>B</td><td>C</td></tr>
+                <tr><td><strong>* C</strong></td><td>{q0,q2}</td><td>B</td><td>A</td></tr>
               </tbody>
             </table>
-            <p class="text-sm">The NFA with 3 states produced a DFA with <strong>3 states</strong>. Accept state C is reached whenever the last two characters read were "ab". Try it in the converter!</p>
-            <button class="mt-4 conv-btn conv-btn-primary" style="padding:9px 18px;font-size:13px;" onclick="convLoadExample(1);showPage('convert');">
-              Run This Example in Converter →
-            </button>
+            <button class="conv-btn conv-btn-primary text-xs" style="padding:7px 14px;" onclick="convLoadExample(1);showPage('convert');">Run in Converter →</button>
           </div>
         </article>
 
-        <!-- ═══ 6. Worked Example 2 — with ε-transitions ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:linear-gradient(135deg,#ff9500,#ff375f);">②</span>
-            Worked Example — ε-NFA for (a|ε)b*
+        <!-- Worked Example 2 -->
+        <article class="card h-full">
+          <h2 class="text-xl font-bold mb-3 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:linear-gradient(135deg,#ff9500,#ff375f);">②</span>
+            Example — ε-NFA for (a|ε)b*
           </h2>
           <div style="color:var(--text-secondary);">
-            <p class="mb-4">Convert an ε-NFA that accepts the language (a|ε)b* — strings that are either just b's, or a followed by any number of b's.</p>
-
-            <div class="rounded-xl p-4 mb-5" style="background:var(--bg-tertiary);">
-              <p class="font-semibold mb-3" style="color:var(--text-primary);">NFA Definition:</p>
-              <p class="text-sm mb-2">States: q0 (start), q1, q2 (accept) &nbsp;·&nbsp; Alphabet: {a, b}</p>
-              <table class="transition-table text-sm">
+            <p class="text-sm mb-3">Accepts strings that are just b's, or a followed by any number of b's.</p>
+            <div class="rounded-xl p-3 mb-3" style="background:var(--bg-tertiary);">
+              <p class="font-semibold text-xs mb-2" style="color:var(--text-primary);">NFA — 3 states, alphabet {a,b,ε}</p>
+              <table class="transition-table text-xs">
                 <thead><tr><th>State</th><th>a</th><th>b</th><th>ε</th></tr></thead>
                 <tbody>
                   <tr><td><strong>→ q0</strong></td><td>{q1}</td><td>—</td><td>{q1}</td></tr>
@@ -1688,131 +1646,126 @@
                 </tbody>
               </table>
             </div>
-
-            <p class="font-semibold mb-3" style="color:var(--text-primary);">Key ε-Closure Computations:</p>
-            <div class="space-y-2 text-sm mb-5">
-              <div class="p-3 rounded-xl" style="background:var(--accent-light);">
-                <strong style="color:var(--accent);">ε-closure({q0}):</strong> Start at q0. Follow ε to q1. Follow ε from q1 to q2. Result: <strong>{q0, q1, q2}</strong><br>
-                <span style="color:var(--text-tertiary);">q0→ε→q1→ε→q2 &nbsp;·&nbsp; q0, q1, q2 all reachable</span>
-              </div>
-              <div class="p-3 rounded-xl" style="background:rgba(175,82,222,0.08);">
-                <strong style="color:#af52de;">ε-closure({q1}):</strong> Start at q1. Follow ε to q2. Result: <strong>{q1, q2}</strong>
-              </div>
+            <p class="font-semibold text-sm mb-2" style="color:var(--text-primary);">Key ε-closures</p>
+            <div class="space-y-1 text-xs mb-3">
+              <div class="p-2 rounded-lg" style="background:var(--accent-light);border-left:2px solid var(--accent);">ε-closure({q0}) = <strong>{q0,q1,q2}</strong> — q0→ε→q1→ε→q2</div>
+              <div class="p-2 rounded-lg" style="background:rgba(175,82,222,0.08);border-left:2px solid #af52de;">ε-closure({q1}) = <strong>{q1,q2}</strong> — q1→ε→q2</div>
             </div>
-
-            <p class="font-semibold mb-3" style="color:var(--text-primary);">Resulting DFA (3 states → 3 reachable DFA states):</p>
-            <table class="transition-table text-sm mb-4">
-              <thead><tr><th>DFA State</th><th>NFA Subset</th><th>a</th><th>b</th></tr></thead>
+            <p class="font-semibold text-sm mb-2" style="color:var(--text-primary);">Resulting DFA</p>
+            <table class="transition-table text-xs mb-3">
+              <thead><tr><th>DFA</th><th>Subset</th><th>a</th><th>b</th></tr></thead>
               <tbody>
                 <tr><td><strong>→ * A</strong></td><td>{q0,q1,q2}</td><td>B</td><td>B</td></tr>
-                <tr><td><strong>* B</strong></td><td>{q1,q2}</td><td>—(dead)</td><td>B</td></tr>
+                <tr><td><strong>* B</strong></td><td>{q1,q2}</td><td>Dead</td><td>B</td></tr>
                 <tr><td>Dead</td><td>∅</td><td>Dead</td><td>Dead</td></tr>
               </tbody>
             </table>
-            <p class="text-sm">A is accepting (contains q2). B is accepting (contains q2). The ε-closure of the start state already includes the accept state, so the empty string ε is accepted — as expected for (a|ε)b*.</p>
-            <button class="mt-4 conv-btn conv-btn-primary" style="padding:9px 18px;font-size:13px;" onclick="convLoadExample(3);showPage('convert');">
-              Run This Example in Converter →
-            </button>
+            <p class="text-xs mb-3" style="color:var(--text-secondary);">A is the start state and already accepting — the empty string ε is in the language, as expected for (a|ε)b*.</p>
+            <button class="conv-btn conv-btn-primary text-xs" style="padding:7px 14px;" onclick="convLoadExample(3);showPage('convert');">Run in Converter →</button>
           </div>
         </article>
+      </div>
 
-        <!-- ═══ 7. NFA vs DFA comparison ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:linear-gradient(135deg,#0071e3,#af52de);">≡</span>
+      <!-- ══════════════════════════════════════════
+           ROW 4 — NFA vs DFA comparison (full width)
+      ══════════════════════════════════════════ -->
+      <div class="mb-5 reveal-section">
+        <article class="card">
+          <h2 class="text-xl font-bold mb-4 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:linear-gradient(135deg,#0071e3,#af52de);">≡</span>
             NFA vs DFA — Side-by-Side Comparison
           </h2>
-          <div style="color:var(--text-secondary);">
-            <div class="overflow-x-auto">
-              <table class="transition-table text-sm">
-                <thead>
-                  <tr>
-                    <th style="text-align:left;width:30%;">Property</th>
-                    <th style="color:#ff9500;">NFA</th>
-                    <th style="color:var(--accent);">DFA</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td><strong>Transitions on a symbol</strong></td><td>0, 1, or many states</td><td>Exactly 1 state</td></tr>
-                  <tr><td><strong>Epsilon (ε) transitions</strong></td><td>✓ Allowed</td><td>✗ Not allowed</td></tr>
-                  <tr><td><strong>Transition function</strong></td><td>Q × (Σ∪{ε}) → P(Q)</td><td>Q × Σ → Q</td></tr>
-                  <tr><td><strong>Acceptance</strong></td><td>Any path reaches F</td><td>Unique path reaches F</td></tr>
-                  <tr><td><strong>Design complexity</strong></td><td>Often simpler to design</td><td>Can be complex to design</td></tr>
-                  <tr><td><strong>Simulation complexity</strong></td><td>Expensive (track all paths)</td><td>Cheap (one state at a time)</td></tr>
-                  <tr><td><strong>Number of states</strong></td><td>n states</td><td>Up to 2ⁿ states (usually fewer)</td></tr>
-                  <tr><td><strong>Expressive power</strong></td><td colspan="2" style="text-align:center;color:var(--accent);">Identical — both recognize exactly the Regular Languages</td></tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="overflow-x-auto">
+            <table class="transition-table text-sm">
+              <thead>
+                <tr>
+                  <th style="text-align:left;width:28%;">Property</th>
+                  <th style="color:#ff9500;width:36%;">NFA</th>
+                  <th style="color:var(--accent);width:36%;">DFA</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Transitions per symbol</strong></td><td>0, 1, or many states</td><td>Exactly 1 state</td></tr>
+                <tr><td><strong>Epsilon (ε) transitions</strong></td><td>✓ Allowed</td><td>✗ Not allowed</td></tr>
+                <tr><td><strong>Transition function</strong></td><td class="font-mono">Q×(Σ∪{ε}) → P(Q)</td><td class="font-mono">Q×Σ → Q</td></tr>
+                <tr><td><strong>Acceptance</strong></td><td>Any path reaches F</td><td>Unique path reaches F</td></tr>
+                <tr><td><strong>Design complexity</strong></td><td>Often simpler to design</td><td>Can be complex to design</td></tr>
+                <tr><td><strong>Simulation cost</strong></td><td>Expensive — track all paths</td><td>Cheap — one state at a time</td></tr>
+                <tr><td><strong>Number of states</strong></td><td>n states</td><td>Up to 2ⁿ (usually fewer)</td></tr>
+                <tr><td><strong>Expressive power</strong></td><td colspan="2" style="text-align:center;color:var(--accent);font-weight:600;">Identical — both recognize exactly the Regular Languages</td></tr>
+              </tbody>
+            </table>
           </div>
         </article>
+      </div>
 
-        <!-- ═══ 8. Why convert? ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:linear-gradient(135deg,#34c759,#0071e3);">?</span>
+      <!-- ══════════════════════════════════════════
+           ROW 5 — Why Convert?  |  Common Pitfalls
+      ══════════════════════════════════════════ -->
+      <div class="grid md:grid-cols-2 gap-5 mb-5 reveal-section" style="align-items:start;">
+
+        <!-- Why Convert? -->
+        <article class="card h-full">
+          <h2 class="text-xl font-bold mb-3 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:linear-gradient(135deg,#34c759,#0071e3);">?</span>
             Why Convert NFA to DFA?
           </h2>
           <div style="color:var(--text-secondary);">
-            <div class="grid md:grid-cols-2 gap-6">
-              <div>
-                <p class="font-semibold mb-3" style="color:var(--text-primary);">Practical Reasons</p>
-                <ul class="space-y-2 text-sm">
-                  <li class="flex gap-2"><span style="color:#34c759;font-size:16px;">›</span><span><strong style="color:var(--text-primary);">Efficient execution:</strong> DFAs run in O(n) time for a string of length n. NFAs require tracking many states simultaneously.</span></li>
-                  <li class="flex gap-2"><span style="color:#34c759;font-size:16px;">›</span><span><strong style="color:var(--text-primary);">Regex compilation:</strong> Most regex engines convert regular expressions → NFA → DFA for fast matching.</span></li>
-                  <li class="flex gap-2"><span style="color:#34c759;font-size:16px;">›</span><span><strong style="color:var(--text-primary);">Lexical analysis:</strong> Compiler lexers use DFAs to tokenize source code at high speed.</span></li>
-                  <li class="flex gap-2"><span style="color:#34c759;font-size:16px;">›</span><span><strong style="color:var(--text-primary);">Hardware implementation:</strong> DFAs map directly to lookup tables and digital circuits.</span></li>
-                </ul>
-              </div>
-              <div>
-                <p class="font-semibold mb-3" style="color:var(--text-primary);">Theoretical Reasons</p>
-                <ul class="space-y-2 text-sm">
-                  <li class="flex gap-2"><span style="color:var(--accent);font-size:16px;">›</span><span><strong style="color:var(--text-primary);">Equivalence proof:</strong> The conversion constructively proves NFA ≡ DFA in expressive power.</span></li>
-                  <li class="flex gap-2"><span style="color:var(--accent);font-size:16px;">›</span><span><strong style="color:var(--text-primary);">Minimisation:</strong> DFA minimisation (Myhill-Nerode) gives the <em>unique smallest</em> machine for a language.</span></li>
-                  <li class="flex gap-2"><span style="color:var(--accent);font-size:16px;">›</span><span><strong style="color:var(--text-primary);">Closure properties:</strong> Operations like complement are trivial on DFAs, complex on NFAs.</span></li>
-                  <li class="flex gap-2"><span style="color:var(--accent);font-size:16px;">›</span><span><strong style="color:var(--text-primary);">Decision procedures:</strong> Emptiness, membership, equivalence testing are easier on DFAs.</span></li>
-                </ul>
-              </div>
-            </div>
+            <p class="font-semibold text-sm mb-2" style="color:var(--text-primary);">Practical Reasons</p>
+            <ul class="space-y-2 text-sm mb-4">
+              <li class="flex gap-2"><span style="color:#34c759;font-size:15px;">›</span><span><strong style="color:var(--text-primary);">Efficient execution:</strong> DFAs run in O(n) time. NFAs track many states simultaneously.</span></li>
+              <li class="flex gap-2"><span style="color:#34c759;font-size:15px;">›</span><span><strong style="color:var(--text-primary);">Regex compilation:</strong> Most engines convert regex → NFA → DFA for fast matching.</span></li>
+              <li class="flex gap-2"><span style="color:#34c759;font-size:15px;">›</span><span><strong style="color:var(--text-primary);">Lexical analysis:</strong> Compiler lexers use DFAs to tokenize source code at high speed.</span></li>
+              <li class="flex gap-2"><span style="color:#34c759;font-size:15px;">›</span><span><strong style="color:var(--text-primary);">Hardware:</strong> DFAs map directly to lookup tables and digital circuits.</span></li>
+            </ul>
+            <p class="font-semibold text-sm mb-2" style="color:var(--text-primary);">Theoretical Reasons</p>
+            <ul class="space-y-2 text-sm">
+              <li class="flex gap-2"><span style="color:var(--accent);font-size:15px;">›</span><span><strong style="color:var(--text-primary);">Equivalence proof:</strong> Constructively proves NFA ≡ DFA in expressive power.</span></li>
+              <li class="flex gap-2"><span style="color:var(--accent);font-size:15px;">›</span><span><strong style="color:var(--text-primary);">Minimisation:</strong> DFA minimisation gives the unique smallest machine for a language.</span></li>
+              <li class="flex gap-2"><span style="color:var(--accent);font-size:15px;">›</span><span><strong style="color:var(--text-primary);">Closure properties:</strong> Complement is trivial on DFAs, complex on NFAs.</span></li>
+              <li class="flex gap-2"><span style="color:var(--accent);font-size:15px;">›</span><span><strong style="color:var(--text-primary);">Decision procedures:</strong> Emptiness, membership, equivalence easier on DFAs.</span></li>
+            </ul>
           </div>
         </article>
 
-        <!-- ═══ 9. Common pitfalls ═══ -->
-        <article class="card reveal-section">
-          <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:linear-gradient(135deg,#ff3b30,#ff9500);">!</span>
+        <!-- Common Pitfalls -->
+        <article class="card h-full">
+          <h2 class="text-xl font-bold mb-3 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:linear-gradient(135deg,#ff3b30,#ff9500);">!</span>
             Common Mistakes & Pitfalls
           </h2>
-          <div style="color:var(--text-secondary);">
-            <div class="space-y-4">
-              <div class="p-4 rounded-xl" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
-                <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Forgetting the ε-closure of the start state</p>
-                <p class="text-sm">The first DFA state is <em>not</em> just {q₀}. It is ε-closure({q₀}), which may include many NFA states reached by ε-hops before any input is read.</p>
-              </div>
-              <div class="p-4 rounded-xl" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
-                <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Skipping the ε-closure after move</p>
-                <p class="text-sm">After computing move(S, a), you must always take the ε-closure of the result. Skipping this step produces a wrong DFA that misses reachable states.</p>
-              </div>
-              <div class="p-4 rounded-xl" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
-                <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Not recognising duplicate DFA states</p>
-                <p class="text-sm">{q0, q1} and {q1, q0} are the same subset. Always sort and canonicalise subset keys before checking if a DFA state already exists.</p>
-              </div>
-              <div class="p-4 rounded-xl" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
-                <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Missing dead/trap states</p>
-                <p class="text-sm">When move(S, a) = ∅, the DFA needs a <em>dead state</em> (∅ state) with self-loops on all symbols. Omitting it makes the DFA incomplete.</p>
-              </div>
-              <div class="p-4 rounded-xl" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
-                <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Wrong accept state identification</p>
-                <p class="text-sm">A DFA state is accepting iff its NFA subset contains <em>at least one</em> NFA accept state — not all of them. Even one accept state in the subset is enough.</p>
-              </div>
+          <div style="color:var(--text-secondary);" class="space-y-2">
+            <div class="p-3 rounded-xl text-sm" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
+              <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Forgetting ε-closure of start state</p>
+              <p class="text-xs">The first DFA state is ε-closure({q₀}), not just {q₀}. It may include many states reached by ε-hops before any input.</p>
+            </div>
+            <div class="p-3 rounded-xl text-sm" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
+              <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Skipping ε-closure after move</p>
+              <p class="text-xs">After move(S,a) you must always take ε-closure of the result. Skipping produces a wrong DFA.</p>
+            </div>
+            <div class="p-3 rounded-xl text-sm" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
+              <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Not recognising duplicate DFA states</p>
+              <p class="text-xs">{q0,q1} and {q1,q0} are the same subset. Always sort and canonicalise before checking.</p>
+            </div>
+            <div class="p-3 rounded-xl text-sm" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
+              <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Missing dead/trap states</p>
+              <p class="text-xs">When move(S,a)=∅ add a dead state (∅) with self-loops on all symbols.</p>
+            </div>
+            <div class="p-3 rounded-xl text-sm" style="background:rgba(255,59,48,0.07);border-left:3px solid #ff3b30;">
+              <p class="font-semibold text-sm mb-1" style="color:var(--text-primary);">Wrong accept state identification</p>
+              <p class="text-xs">A DFA state is accepting if its subset contains <em>at least one</em> NFA accept state — not all of them.</p>
             </div>
           </div>
         </article>
+      </div>
 
-        <!-- ═══ 10. Quick Reference ═══ -->
-        <article class="card reveal-section" style="background:linear-gradient(135deg,var(--accent-light),rgba(52,199,89,0.06));border:1px solid rgba(0,113,227,0.15);">
-          <h2 class="text-2xl font-bold mb-5 flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0" style="background:var(--accent);">✓</span>
+      <!-- ══════════════════════════════════════════
+           ROW 6 — Quick Reference (full width)
+      ══════════════════════════════════════════ -->
+      <div class="reveal-section">
+        <article class="card" style="background:linear-gradient(135deg,var(--accent-light),rgba(52,199,89,0.06));border:1px solid rgba(0,113,227,0.15);">
+          <h2 class="text-xl font-bold mb-4 flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0" style="background:var(--accent);">✓</span>
             Quick Reference — Subset Construction Checklist
           </h2>
           <div class="grid md:grid-cols-2 gap-4 text-sm" style="color:var(--text-secondary);">
@@ -1821,7 +1774,7 @@
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>List all NFA states Q and alphabet Σ</span></label>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>Write out the full NFA transition table including ε column</span></label>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>Identify NFA start state q₀ and accept states F</span></label>
-              <p class="font-semibold mt-4" style="color:var(--text-primary);">During construction:</p>
+              <p class="font-semibold mt-3" style="color:var(--text-primary);">During construction:</p>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>First DFA state = ε-closure({q₀})</span></label>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>For every unprocessed DFA state and every symbol: compute move then ε-closure</span></label>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>Check if result is a new subset before adding</span></label>
@@ -1829,26 +1782,23 @@
             <div class="space-y-2">
               <p class="font-semibold" style="color:var(--text-primary);">Accepting states:</p>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>Any DFA state whose subset ∩ F<sup>NFA</sup> ≠ ∅ is a DFA accept state</span></label>
-              <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>If the initial DFA state contains an NFA accept state, the start state is also accepting</span></label>
-              <p class="font-semibold mt-4" style="color:var(--text-primary);">Completion check:</p>
+              <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>If the initial DFA state contains an NFA accept state, start state is also accepting</span></label>
+              <p class="font-semibold mt-3" style="color:var(--text-primary);">Completion check:</p>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>Every DFA state has exactly one transition per symbol</span></label>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>Dead state (∅) added where move = ∅, with self-loops</span></label>
               <label class="flex gap-2 items-start cursor-default"><input type="checkbox" class="mt-0.5 flex-shrink-0"><span>Worklist is empty — no unprocessed DFA states remain</span></label>
             </div>
           </div>
-          <div class="mt-6 flex flex-wrap gap-3">
-            <button class="conv-btn conv-btn-primary" style="padding:10px 20px;" onclick="showPage('convert')">
-              Practice in the Converter →
-            </button>
-            <button class="conv-btn conv-btn-secondary" style="padding:10px 20px;" onclick="showPage('simulator')">
-              Draw an NFA in Simulator
-            </button>
+          <div class="mt-5 flex flex-wrap gap-3">
+            <button class="conv-btn conv-btn-primary" style="padding:10px 20px;" onclick="showPage('convert')">Practice in the Converter →</button>
+            <button class="conv-btn conv-btn-secondary" style="padding:10px 20px;" onclick="showPage('simulator')">Draw an NFA in Simulator</button>
           </div>
         </article>
-
       </div>
+
     </div>
   </section>
+
 
   <!-- About Page -->
   <section id="page-about" class="page-section pt-24 min-h-screen" style="background: var(--bg-primary);">
