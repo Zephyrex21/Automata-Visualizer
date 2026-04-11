@@ -2006,7 +2006,7 @@
 
       <!-- ══ ROW 4: MAIN WORKSPACE — 3 columns ══
            [Step panel + NFA δ table] | [NFA canvas + State Composition] | [DFA canvas + Transition Table] -->
-      <div id="convWorkspace" class="grid gap-3 mb-3" style="grid-template-columns: 300px 1fr 1fr; align-items: start;">
+      <div id="convWorkspace" class="grid gap-3 mb-3" style="grid-template-columns: 300px 1fr 1fr; align-items: stretch;">
 
         <!-- A: Step info panel -->
         <div class="step-panel flex flex-col" id="convStepPanel">
@@ -2036,8 +2036,8 @@
             <div id="convMappingText" class="font-mono font-bold" style="color:var(--accent);font-size:13px;"></div>
           </div>
 
-          <!-- NFA δ table -->
-          <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+          <!-- NFA δ table — grows to fill remaining vertical space -->
+          <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;flex:1;display:flex;flex-direction:column;">
             <p style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">NFA Transition δ</p>
             <div class="overflow-x-auto">
               <table class="transition-table" id="convNfaTable" style="font-size:11px;">
@@ -2053,42 +2053,42 @@
           </div>
         </div>
 
-        <!-- B: NFA Canvas + DFA State Composition below -->
+        <!-- B: NFA Canvas + DFA State Composition below — stretches full column height -->
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <div class="canvas-container" id="convNfaContainer" style="height:290px;position:relative;border-radius:16px;">
+          <div class="canvas-container" id="convNfaContainer" style="height:290px;position:relative;border-radius:16px;flex-shrink:0;">
             <div class="canvas-label-badge canvas-label-nfa">NFA</div>
             <canvas id="convNfaCanvas" style="display:block;"></canvas>
           </div>
 
-          <!-- DFA State Composition (moved under NFA canvas) -->
-          <div class="card" style="padding:12px 14px;">
-            <div class="flex items-center justify-between mb-2">
+          <!-- DFA State Composition — grows to fill remaining height -->
+          <div class="card" style="padding:12px 14px;flex:1;display:flex;flex-direction:column;">
+            <div class="flex items-center justify-between mb-2" style="flex-shrink:0;">
               <p style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">DFA State Composition</p>
               <span style="font-size:10px;color:var(--text-tertiary);">subset of NFA states</span>
             </div>
-            <div class="mapping-container" id="convMappingChips" style="gap:6px;">
+            <div class="mapping-container" id="convMappingChips" style="gap:6px;flex:1;align-content:flex-start;">
               <span style="color:var(--text-tertiary);font-size:12px;">States will appear as they are discovered</span>
             </div>
           </div>
         </div>
 
-        <!-- C: DFA Canvas + DFA Transition Table below -->
+        <!-- C: DFA Canvas + DFA Transition Table below — stretches full column height -->
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <div class="canvas-container" id="convDfaContainer" style="height:290px;position:relative;border-radius:16px;">
+          <div class="canvas-container" id="convDfaContainer" style="height:290px;position:relative;border-radius:16px;flex-shrink:0;">
             <div class="canvas-label-badge canvas-label-dfa">DFA</div>
             <canvas id="convDfaCanvas" style="display:block;"></canvas>
           </div>
 
-          <!-- DFA Transition Table (moved under DFA canvas, no scroll) -->
-          <div class="card" style="padding:12px 14px;" id="convBottomRow">
-            <div class="flex items-center justify-between mb-2">
+          <!-- DFA Transition Table — grows to fill remaining height -->
+          <div class="card" style="padding:12px 14px;flex:1;display:flex;flex-direction:column;" id="convBottomRow">
+            <div class="flex items-center justify-between mb-2" style="flex-shrink:0;">
               <p style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">DFA Transition Table δ'</p>
               <div class="flex gap-2" style="font-size:10px;">
                 <span style="background:rgba(52,199,89,0.12);color:#34c759;padding:2px 8px;border-radius:20px;">* accept</span>
                 <span style="background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:20px;">→ start</span>
               </div>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto" style="flex:1;">
               <table class="transition-table" id="convDfaTable" style="min-width:100%;font-size:11px;">
                 <thead><tr id="convDfaTableHead"><th>State</th><th>Subset</th></tr></thead>
                 <tbody id="convDfaTableBody">
