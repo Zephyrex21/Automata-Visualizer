@@ -1133,7 +1133,7 @@
             </div>
             <span class="font-semibold">Automata Lab</span>
           </div>
-          <p class="text-sm" style="color: var(--text-tertiary);">Built by Saurabh Raj Shekkhar  · CSE Depart.  · NSUT.</p>
+          <p class="text-sm" style="color: var(--text-tertiary);">NFA → DFA Conversion · Subset Construction · Built for education.</p>
         </div>
       </div>
     </footer>
@@ -1247,7 +1247,7 @@
               <button class="btn-secondary w-full text-sm" onclick="undoAction()">↩ Undo (Ctrl+Z)</button>
               <button class="btn-secondary w-full text-sm" onclick="clearAll()">Clear All</button>
               <button class="btn-secondary w-full text-sm" onclick="autoLayout()">Auto Layout</button>
-              <button class="btn-secondary w-full text-sm" onclick="toggleFullscreen()">⛶ Expand Canvas</button>
+              <button class="btn-secondary w-full text-sm" onclick="toggleFullscreen(event)">⛶ Expand Canvas</button>
             </div>
           </div>
         </div>
@@ -1855,12 +1855,13 @@
             <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">HTML5 Canvas</span>
             <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">Vanilla JavaScript</span>
             <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">Subset Construction Algorithm</span>
+            <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">BFS ε-Closure</span>
             <span class="px-3 py-1 rounded-full text-sm font-medium" style="background: var(--accent-light); color: var(--accent);">Tailwind CSS</span>
           </div>
         </div>
         <div class="card reveal-section text-center">
-          <p class="mb-4" style="color: var(--text-secondary);">Built with 💗 by Saurabh Raj Shekhar CSE Depart. NSUT </p>
-          <p class="text-sm" style="color: var(--text-tertiary);">Version 1.0 — Automata Lab</p>
+          <p class="mb-4" style="color: var(--text-secondary);">Built with care for Theory of Automata students and educators</p>
+          <p class="text-sm" style="color: var(--text-tertiary);">Version 3.0.0 — NFA→DFA Edition</p>
         </div>
       </div>
     </div>
@@ -2343,10 +2344,10 @@ q1, b, q2</textarea>
       render();
     }
 
-    // FIX: Toggle canvas fullscreen
-    function toggleFullscreen() {
+    // FIX #10: Accept explicit event parameter — no implicit global `event`
+    function toggleFullscreen(e) {
       const container = document.getElementById('canvasContainer');
-      const btn = event.target.closest('button');
+      const btn = (e && e.target) ? e.target.closest('button') : null;
       if (container.dataset.expanded === '1') {
         container.style.height = '500px';
         container.dataset.expanded = '0';
@@ -2624,7 +2625,6 @@ q1, b, q2</textarea>
     function addTransition(fromId, toId, symbol) {
       const existing = transitions.find(t => t.from === fromId && t.to === toId && t.symbol === symbol);
       if (!existing) {
-        saveToUndo();
         transitions.push({ from: fromId, to: toId, symbol });
         render();
       }
@@ -2853,20 +2853,25 @@ q1, b, q2</textarea>
       simulationState.currentStep--;
       simulationState.history.pop();
 
-      const prevHistory = simulationState.history[simulationState.history.length - 1];
+      // FIX #6: history[0] is the initial step — access index directly rather than relying on pop result
+      const prevHistory = simulationState.history.length > 0
+        ? simulationState.history[simulationState.history.length - 1]
+        : null;
+
       if (prevHistory) {
-        simulationState.activeStates   = prevHistory.activeStates || [startState];
-        // FIX: restore processedInput from history, not by slicing current value
+        simulationState.activeStates   = prevHistory.activeStates && prevHistory.activeStates.length > 0
+          ? prevHistory.activeStates
+          : (startState ? epsilonClosure([startState]) : []);  // always epsilon-closed
         simulationState.processedInput = prevHistory.processedInput || '';
       } else {
+        // Truly back at step 0 — restore initial epsilon closure of start state
         simulationState.activeStates   = startState ? epsilonClosure([startState]) : [];
         simulationState.processedInput = '';
       }
 
-      // FIX: Do NOT set isRunning=false at step 0 — doing so causes nextStep() to restart
-      // simulation from scratch instead of advancing from the initial state.
-      // Only update status display.
+      // Reset isRunning when back at step 0
       if (simulationState.currentStep === 0) {
+        simulationState.isRunning = false;
         showStatus('Ready', 'running');
       } else {
         showStatus('Running...', 'running');
@@ -2913,6 +2918,8 @@ q1, b, q2</textarea>
 
     function playSimulation() {
       if (!simulationState.isRunning) startSimulation();
+      // FIX #12: Don't start interval if startSimulation() already finished (e.g. empty string input)
+      if (!simulationState.isRunning) return;
       simulationState.isPaused = false;
       document.getElementById('playIcon').style.display  = 'none';
       document.getElementById('pauseIcon').style.display = 'block';
@@ -3174,12 +3181,10 @@ q1, b, q2</textarea>
       const queue = [initial];
       let dfaCounter = 0;
 
-      // Dead/trap state key and id
-      const DEAD_KEY = '∅';
-      let deadStateAdded = false;
-      let deadStateId = null;
-
       dfaStatesMap.set(initialKey, { nfaStates: initial, dfaId: 'q' + dfaCounter++ });
+
+      const DEAD_KEY = '∅';
+      let deadStateNeeded = false;
 
       while (queue.length) {
         const current    = queue.shift();
@@ -3191,13 +3196,9 @@ q1, b, q2</textarea>
           const closed = nfaEpsilonClosure(moved);
 
           if (closed.size === 0) {
-            // Add dead/trap state on first encounter
-            if (!deadStateAdded) {
-              deadStateId = 'q' + dfaCounter++;
-              dfaStatesMap.set(DEAD_KEY, { nfaStates: new Set(), dfaId: deadStateId });
-              deadStateAdded = true;
-            }
-            dfaTransitions.push({ from: currentId, to: deadStateId, symbol: sym });
+            // FIX #3: Record transition to dead state instead of skipping
+            deadStateNeeded = true;
+            dfaTransitions.push({ from: currentId, to: DEAD_KEY, symbol: sym });
             continue;
           }
 
@@ -3210,10 +3211,11 @@ q1, b, q2</textarea>
         }
       }
 
-      // Add self-loops on all symbols from dead state
-      if (deadStateAdded) {
+      // Add dead/trap state with self-loops if needed
+      if (deadStateNeeded) {
+        dfaStatesMap.set(DEAD_KEY, { nfaStates: new Set(), dfaId: DEAD_KEY });
         for (const sym of dfaAlphabet) {
-          dfaTransitions.push({ from: deadStateId, to: deadStateId, symbol: sym });
+          dfaTransitions.push({ from: DEAD_KEY, to: DEAD_KEY, symbol: sym });
         }
       }
 
@@ -3289,13 +3291,15 @@ q1, b, q2</textarea>
             startState   = data.startState   || null;
             acceptStates = new Set(data.acceptStates || []);
             alphabet     = data.alphabet     || ['a', 'b'];
-            // Recompute counter from loaded IDs — handles both q0/q1 and A/B/C letter labels
-            stateCounter = states.length
-              ? Math.max(...states.map(s => {
-                  const m = s.id.match(/(\d+)$/);
-                  return m ? parseInt(m[1]) : 0;
-                })) + 1
-              : 0;
+            // FIX #9: Handle both numeric (q0,q1) and letter-based (A,B,C) state IDs
+            stateCounter = 0;
+            if (states.length) {
+              const maxNumeric = Math.max(...states.map(s => {
+                const n = parseInt(s.id.replace(/^q/i, ''));
+                return isNaN(n) ? -1 : n;
+              }));
+              stateCounter = maxNumeric >= 0 ? maxNumeric + 1 : states.length;
+            }
             document.getElementById('alphabetInput').value = alphabet.join(',');
             if (data.mode) setMode(data.mode);
             resetSimulation();
@@ -3337,12 +3341,15 @@ q1, b, q2</textarea>
       render();
     }
 
-    // FIX: Support comma-separated multi-symbol transitions
+    // FIX #2: Empty input now cancels instead of silently defaulting to 'a'
     function confirmTransition() {
       const rawInput = document.getElementById('symbolInput').value.trim();
-      const symbols  = rawInput
-        ? rawInput.split(',').map(s => s.trim()).filter(s => s.length > 0)
-        : ['a'];
+      if (!rawInput) {
+        closeSymbolModal();
+        return;
+      }
+      const symbols = rawInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
+      if (symbols.length === 0) { closeSymbolModal(); return; }
 
       if (transitionSource && pendingTransitionTargetId) {
         saveToUndo();
@@ -3395,11 +3402,15 @@ q1, b, q2</textarea>
           break;
 
         case 'start':
-          if (clickedState) startState = clickedState.id;
+          if (clickedState) {
+            saveToUndo(); // FIX #8: undoable
+            startState = clickedState.id;
+          }
           break;
 
         case 'accept':
           if (clickedState) {
+            saveToUndo(); // FIX #8: undoable
             if (acceptStates.has(clickedState.id)) acceptStates.delete(clickedState.id);
             else acceptStates.add(clickedState.id);
           }
@@ -3424,6 +3435,7 @@ q1, b, q2</textarea>
       const { x, y } = getCanvasPos(e);
       const state = getStateAtPosition(x, y);
       if (state) {
+        saveToUndo(); // FIX #7: save before drag so position change is undoable
         draggingState = state;
         dragOffset.x  = x - state.x;
         dragOffset.y  = y - state.y;
@@ -3458,7 +3470,7 @@ q1, b, q2</textarea>
         if (e.key === 'Enter')  confirmTransition();
         return;
       }
-      if (e.target.tagName === 'INPUT') return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
       switch (e.key) {
         case ' ':          e.preventDefault(); togglePlayPause(); break;
@@ -3738,8 +3750,9 @@ q1, b, q2</textarea>
           // ── ε-CLOSURE step ──
           const closed  = convEpsClosure(moved);
           const epsDiff = [...closed].filter(s => !moved.has(s));
-          const epsTrans= conv.nfaTransitions.filter(
-            t => moved.has(t.from) && t.symbol === 'ε' && closed.has(t.to)
+          // FIX #4: Collect ALL ε-transitions in the full closure chain, not just from moved
+          const epsTrans = conv.nfaTransitions.filter(
+            t => closed.has(t.from) && t.symbol === 'ε' && closed.has(t.to)
           );
           steps.push({
             phase:        'epsilon',
@@ -3908,24 +3921,7 @@ q1, b, q2</textarea>
 
       let sX, sY, eX, eY, cX, cY;
       if (isSelf) {
-        // Pick self-loop angle based on state position to avoid clipping at canvas edges
-        const canvasEl = ctx.canvas;
-        const margin = 70;
-        const nearTop    = fromSt.y < margin;
-        const nearBottom = canvasEl && fromSt.y > canvasEl.height - margin;
-        const nearLeft   = fromSt.x < margin;
-        const nearRight  = canvasEl && fromSt.x > canvasEl.width  - margin;
-        let ang;
-        if      (nearTop    && nearLeft)  ang =  Math.PI / 4;
-        else if (nearTop    && nearRight) ang =  (3*Math.PI) / 4;
-        else if (nearBottom && nearLeft)  ang = -Math.PI / 4;
-        else if (nearBottom && nearRight) ang = -(3*Math.PI) / 4;
-        else if (nearTop)    ang =  Math.PI / 2;
-        else if (nearBottom) ang = -Math.PI / 2;
-        else if (nearLeft)   ang =  0;
-        else if (nearRight)  ang =  Math.PI;
-        else                 ang = -Math.PI / 4;
-        const sp = 0.55;
+        const ang = -Math.PI / 4, sp = 0.55;
         sX = fromSt.x + CONV_R*Math.cos(ang-sp); sY = fromSt.y + CONV_R*Math.sin(ang-sp);
         eX = fromSt.x + CONV_R*Math.cos(ang+sp); eY = fromSt.y + CONV_R*Math.sin(ang+sp);
         cX = fromSt.x + (CONV_R+60)*Math.cos(ang); cY = fromSt.y + (CONV_R+60)*Math.sin(ang);
@@ -4041,13 +4037,7 @@ q1, b, q2</textarea>
 
       for (const st of stateObjs) {
         const isStart  = st.label === conv.dfaStartLabel;
-        // Derive accept from the step snapshot — not global conv.dfaAccept (which is set ahead of time)
-        const snapEntry = dfaMapSnap.get([...dfaMapSnap.keys()].find(k => {
-          const e = dfaMapSnap.get(k); return e && e.label === st.label;
-        }));
-        const isAccept = snapEntry
-          ? [...snapEntry.nfaStates].some(s => conv.nfaAccept.has(s))
-          : false;
+        const isAccept = conv.dfaAccept.has(st.label);
         let hl = 'normal';
         if (step.phase==='done' && isAccept) hl = 'done-accept';
         else if (st.label===newState)        hl = 'new';
@@ -4131,8 +4121,7 @@ q1, b, q2</textarea>
       }
       let html = '';
       for (const [,entry] of step.dfaMapSnap) {
-        // Derive accept from snapshot NFA states — not global conv.dfaAccept (set ahead of time)
-        const isAcc  = [...entry.nfaStates].some(s => conv.nfaAccept.has(s));
+        const isAcc  = conv.dfaAccept.has(entry.label);
         const isNew  = step.newDfaState===entry.label;
         const isHigh = step.dfaHighlight&&step.dfaHighlight.has(entry.label);
         let cls = 'dfa-chip-normal';
@@ -4165,8 +4154,7 @@ q1, b, q2</textarea>
       let body = '';
       for (const [,entry] of step.dfaMapSnap) {
         const lbl     = entry.label;
-        // Derive accept from snapshot NFA states — not global conv.dfaAccept
-        const isAcc   = [...entry.nfaStates].some(s => conv.nfaAccept.has(s));
+        const isAcc   = conv.dfaAccept.has(lbl);
         const isStart = lbl === conv.dfaStartLabel;
         const marker  = (isStart?'→':'') + (isAcc?'*':'');
         body += `<tr class="${step.newDfaState===lbl?'table-row-new':''}">`;
@@ -4339,22 +4327,21 @@ q1, b, q2</textarea>
         ];
         conv.nfaStart='q0'; conv.nfaAccept=new Set(['q2']);
       }
-      /* ④ Even number of a's — ε-NFA with 4 states */
+      /* ④ Even number of a's — clean NFA: q0=even(accept), q1=odd */
       else if (n===4) {
         conv.nfaAlphabet=['a','b'];
         conv.nfaStates=[
           {id:'q0',label:'q0'},{id:'q1',label:'q1'},
           {id:'q2',label:'q2'},{id:'q3',label:'q3'},
         ];
-        // q0=start, q1 counts odd a's, q2/q3 are ε-split paths looping on b
-        // ε-NFA: q0 --ε--> q2 (even path, accept), q0 --ε--> q1 (odd path)
-        // q1 --a--> q0 (toggle back to even), q1 --b--> q1
-        // q2 --a--> q3, q2 --b--> q2, q3 --a--> q2, q3 --b--> q3
         conv.nfaTransitions=[
-          {from:'q0',to:'q1',symbol:'ε'},{from:'q0',to:'q2',symbol:'ε'},
-          {from:'q1',to:'q0',symbol:'a'},{from:'q1',to:'q1',symbol:'b'},
-          {from:'q2',to:'q3',symbol:'a'},{from:'q2',to:'q2',symbol:'b'},
-          {from:'q3',to:'q2',symbol:'a'},{from:'q3',to:'q3',symbol:'b'},
+          // q0: even a's seen (accept) — b loops, a goes to q1
+          {from:'q0',to:'q0',symbol:'b'},{from:'q0',to:'q1',symbol:'a'},
+          // q1: odd a's seen — b loops, a goes back to q0
+          {from:'q1',to:'q1',symbol:'b'},{from:'q1',to:'q0',symbol:'a'},
+          // q2, q3: ε-reachable extras to demonstrate ε-closure
+          {from:'q0',to:'q2',symbol:'ε'},{from:'q1',to:'q3',symbol:'ε'},
+          {from:'q2',to:'q2',symbol:'b'},{from:'q3',to:'q3',symbol:'b'},
         ];
         conv.nfaStart='q0'; conv.nfaAccept=new Set(['q0','q2']);
       }
@@ -4435,10 +4422,11 @@ q1, b, q2</textarea>
     // ============================================================
     function convLoadFromSimulator() {
       if (typeof states==='undefined'||states.length===0) {
-        convToast('The Simulator has no states. Build an NFA there first (switch to NFA mode).','warn'); return;
+        convToast('The Simulator has no states. Build an NFA there first.','warn'); return;
       }
+      // FIX #5: Block if simulator is in DFA mode — subset construction needs an NFA
       if (typeof currentMode !== 'undefined' && currentMode !== 'NFA') {
-        convToast('The Simulator is in DFA mode. Switch to NFA mode before loading.','error'); return;
+        convToast('Switch the Simulator to NFA mode first, then click Convert.','warn'); return;
       }
       conv.nfaStates      = states.map(s=>({id:s.id, label:s.label}));
       conv.nfaTransitions = transitions.map(t=>({from:t.from, to:t.to, symbol:t.symbol}));
@@ -4576,7 +4564,6 @@ q1, b, q2</textarea>
     if (!CanvasRenderingContext2D.prototype.roundRect) {
       CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
         if (w<2*r) r=w/2; if (h<2*r) r=h/2;
-        this.beginPath();
         this.moveTo(x+r,y);
         this.arcTo(x+w,y, x+w,y+h, r);
         this.arcTo(x+w,y+h, x,y+h, r);
