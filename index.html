@@ -1146,21 +1146,21 @@
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div>
           <h1 class="text-3xl font-bold mb-2">Automaton Simulator</h1>
-          <p style="color: var(--text-secondary);">Draw an NFA here, then click <strong>NFA→DFA</strong> to convert it step-by-step</p>
+          <p id="simSubtitle" style="color: var(--text-secondary);">Draw an <strong>NFA</strong> here, then click <strong>NFA→DFA</strong> to convert it step-by-step</p>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="mode-toggle">
-            <button id="dfaModeBtn" class="active" onclick="setMode('DFA')">DFA</button>
-            <button id="nfaModeBtn" onclick="setMode('NFA')">NFA</button>
+        <div class="flex items-center gap-2" style="flex-wrap:nowrap;overflow:hidden;">
+          <div class="mode-toggle" style="flex-shrink:0;">
+            <button id="dfaModeBtn" onclick="setMode('DFA')">DFA</button>
+            <button id="nfaModeBtn" class="active" onclick="setMode('NFA')">NFA</button>
           </div>
-          <button class="btn-secondary flex items-center gap-2" onclick="loadExample()">
+          <button class="btn-secondary flex items-center gap-2" style="flex-shrink:0;white-space:nowrap;" onclick="loadExample()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
             </svg>
             Load Example
           </button>
-          <button class="btn-secondary flex items-center gap-2" onclick="convFromSimulatorAndGo()" id="convertBtn" style="display:none;">
+          <button class="btn-secondary flex items-center gap-2" style="flex-shrink:0;white-space:nowrap;" onclick="convFromSimulatorAndGo()" id="convertBtn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="17 1 21 5 17 9"></polyline>
               <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
@@ -1169,21 +1169,19 @@
             </svg>
             NFA→DFA
           </button>
-          <button class="btn-secondary flex items-center gap-2" onclick="exportAutomaton()" title="Export JSON">
+          <button class="btn-icon tooltip" style="flex-shrink:0;" onclick="exportAutomaton()" data-tooltip="Export JSON">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            Export
           </button>
-          <button class="btn-secondary flex items-center gap-2" onclick="importAutomaton()" title="Import JSON">
+          <button class="btn-icon tooltip" style="flex-shrink:0;" onclick="importAutomaton()" data-tooltip="Import JSON">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            Import
           </button>
         </div>
       </div>
@@ -2247,7 +2245,7 @@ q1, b, q2</textarea>
     // ============================================
 
     let currentTool = 'select';
-    let currentMode = 'DFA';
+    let currentMode = 'NFA';
     let states = [];
     let transitions = [];
     let alphabet = ['a', 'b'];
@@ -2786,7 +2784,15 @@ q1, b, q2</textarea>
       document.getElementById('dfaModeBtn').classList.toggle('active', mode === 'DFA');
       document.getElementById('nfaModeBtn').classList.toggle('active', mode === 'NFA');
       // Show NFA→DFA button only in NFA mode
-      document.getElementById('convertBtn').style.display = mode === 'NFA' ? 'flex' : 'none';
+      const cb = document.getElementById('convertBtn');
+      if (cb) { cb.style.display = mode === 'NFA' ? 'flex' : 'none'; }
+      // Update subtitle under "Automaton Simulator" heading
+      const sub = document.getElementById('simSubtitle');
+      if (sub) {
+        sub.innerHTML = mode === 'NFA'
+          ? 'Draw an <strong>NFA</strong> here, then click <strong>NFA→DFA</strong> to convert it step-by-step'
+          : 'Draw a <strong>DFA</strong> here — every state must have exactly one transition per symbol';
+      }
       resetSimulation();
       render();
       updateConvertBanner();
