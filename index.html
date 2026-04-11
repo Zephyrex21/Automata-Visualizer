@@ -413,10 +413,395 @@
       margin-top: 4px;
       min-height: 16px;
     }
+
+    /* ============================================
+       NFA→DFA CONVERTER PAGE STYLES
+       ============================================ */
+
+    /* Dual canvas label badge */
+    .canvas-label-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .canvas-label-nfa { background: rgba(255,149,0,0.18); color: #ff9500; border: 1px solid rgba(255,149,0,0.3); }
+    .canvas-label-dfa { background: rgba(52,199,89,0.18); color: #34c759; border: 1px solid rgba(52,199,89,0.3); }
+
+    /* Step panel */
+    .step-panel {
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      transition: all 0.35s ease;
+    }
+    .step-phase-bar {
+      height: 4px;
+      border-radius: 2px;
+      margin-bottom: 16px;
+      transition: all 0.4s ease;
+    }
+    .step-phase-init    { background: linear-gradient(90deg, var(--accent), #409cff); }
+    .step-phase-move    { background: linear-gradient(90deg, #ff9500, #ff6b6b); }
+    .step-phase-epsilon { background: linear-gradient(90deg, #af52de, #ff375f); }
+    .step-phase-new     { background: linear-gradient(90deg, #34c759, #30d158); }
+    .step-phase-trans   { background: linear-gradient(90deg, var(--accent), #34c759); }
+    .step-phase-done    { background: linear-gradient(90deg, #34c759, #00c7be); }
+    .step-phase-idle    { background: var(--bg-tertiary); }
+
+    .step-number-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--accent-light);
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+    .step-explanation {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* DFA State Mapping chips */
+    .mapping-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .dfa-state-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      animation: chipAppear 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes chipAppear {
+      from { opacity: 0; transform: scale(0.6) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .dfa-chip-normal  { background: var(--accent-light); color: var(--accent); border-color: rgba(0,113,227,0.2); }
+    .dfa-chip-accept  { background: rgba(52,199,89,0.15); color: #34c759; border-color: rgba(52,199,89,0.3); }
+    .dfa-chip-new     { background: rgba(175,82,222,0.15); color: #af52de; border-color: rgba(175,82,222,0.3); }
+    .dfa-chip-active  { background: rgba(255,149,0,0.15); color: #ff9500; border-color: rgba(255,149,0,0.3); }
+
+    /* NFA state chips (smaller) */
+    .nfa-state-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255,149,0,0.12);
+      color: #ff9500;
+    }
+
+    /* Preloaded example cards */
+    .example-card {
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-tertiary);
+    }
+    .example-card:hover  { border-color: var(--accent); background: var(--accent-light); }
+    .example-card.active { border-color: var(--accent); background: var(--accent-light); }
+    .example-card-title  { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+    .example-card-desc   { font-size: 11px; color: var(--text-secondary); }
+
+    /* Controls bar */
+    .conv-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .conv-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .conv-btn-primary { background: var(--accent); color: white; }
+    .conv-btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,113,227,0.3); }
+    .conv-btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+    .conv-btn-secondary:hover { background: var(--border); }
+    .conv-btn-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 16px;
+    }
+    .conv-btn-icon:hover  { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+    .conv-btn-icon.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .conv-btn-icon:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+    /* Live DFA transition table cells */
+    .dfa-table-cell-empty { color: var(--text-tertiary); font-style: italic; }
+    .dfa-table-cell-new {
+      color: var(--accent);
+      font-weight: 700;
+      animation: cellFill 0.5s ease-out;
+    }
+    @keyframes cellFill {
+      from { background: var(--accent-light); }
+      to   { background: transparent; }
+    }
+
+    /* Concept info panel (collapsible) */
+    .concept-panel {
+      background: linear-gradient(135deg, var(--accent-light), rgba(52,199,89,0.06));
+      border: 1px solid rgba(0,113,227,0.15);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 8px;
+    }
+    .concept-step {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .concept-step:last-child { border-bottom: none; }
+    .concept-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Progress indicator */
+    .conv-progress-track {
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+      flex: 1;
+    }
+    .conv-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), #34c759);
+      transition: width 0.4s ease;
+    }
+
+    /* Completed step glow */
+    .step-done-glow {
+      box-shadow: 0 0 0 2px rgba(52,199,89,0.4), 0 8px 30px rgba(52,199,89,0.15);
+    }
+
+    /* Table row new animation */
+    @keyframes rowSlideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .table-row-new { animation: rowSlideIn 0.4s ease-out; }
+
+    /* Tooltip concepts */
+    .conv-tooltip {
+      position: relative;
+      cursor: help;
+      border-bottom: 1px dashed var(--text-tertiary);
+    }
+    .conv-tooltip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      white-space: nowrap;
+      max-width: 260px;
+      white-space: normal;
+      text-align: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .conv-tooltip:hover::after { opacity: 1; visibility: visible; }
+    /* clean show/hide for converter playback panel */
+    .conv-hidden { display: none !important; }
+    .conv-visible { display: flex !important; }
+
+    /* ── Toast notification system ── */
+    #convToastContainer {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .conv-toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 500;
+      max-width: 360px;
+      box-shadow: var(--shadow-lg);
+      pointer-events: all;
+      animation: toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    .conv-toast.success { border-left: 4px solid #34c759; }
+    .conv-toast.error   { border-left: 4px solid #ff3b30; }
+    .conv-toast.info    { border-left: 4px solid var(--accent); }
+    .conv-toast.warn    { border-left: 4px solid #ff9500; }
+    @keyframes toastIn  { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
+    @keyframes toastOut { from { opacity:1; transform: translateX(0); } to { opacity:0; transform: translateX(40px); } }
+    .conv-toast.leaving { animation: toastOut 0.25s ease forwards; }
+
+    /* ── Speed control ── */
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .speed-control label { font-size: 12px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+    .speed-control input[type=range] {
+      width: 80px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .speed-val { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 700; width: 28px; text-align: right; }
+
+    /* ── Custom NFA input modal ── */
+    #convCustomModal {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .conv-modal-box {
+      background: var(--bg-secondary);
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 540px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      animation: fadeInUp 0.35s ease-out;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .conv-modal-field { margin-bottom: 18px; }
+    .conv-modal-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 7px;
+    }
+    .conv-modal-hint { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+
+    /* ── Keyboard shortcut badge ── */
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      margin: 0 2px;
+    }
+
+    /* ── Send-to-Simulator banner in summary ── */
+    .conv-action-banner {
+      margin-top: 20px;
+      padding: 18px 22px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent-light), rgba(52,199,89,0.08));
+      border: 1px solid rgba(0,113,227,0.15);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
+  <!-- Toast notification container -->
+  <div id="convToastContainer"></div>
   <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -443,6 +828,7 @@
       <div class="hidden lg:flex items-center gap-2">
         <a href="#" class="nav-link active" data-page="home" onclick="showPage('home')">Home</a>
         <a href="#" class="nav-link" data-page="simulator" onclick="showPage('simulator')">Simulator</a>
+        <a href="#" class="nav-link" data-page="convert" onclick="showPage('convert')">NFA→DFA</a>
         <a href="#" class="nav-link" data-page="learn" onclick="showPage('learn')">Learn</a>
         <a href="#" class="nav-link" data-page="about" onclick="showPage('about')">About</a>
       </div>
@@ -482,6 +868,7 @@
       <div class="flex flex-col gap-2">
         <a href="#" class="nav-link active" onclick="showPage('home'); closeMobileMenu()">Home</a>
         <a href="#" class="nav-link" onclick="showPage('simulator'); closeMobileMenu()">Simulator</a>
+        <a href="#" class="nav-link" onclick="showPage('convert'); closeMobileMenu()">NFA→DFA</a>
         <a href="#" class="nav-link" onclick="showPage('learn'); closeMobileMenu()">Learn</a>
         <a href="#" class="nav-link" onclick="showPage('about'); closeMobileMenu()">About</a>
         <button class="btn-primary mt-4" onclick="showPage('simulator'); closeMobileMenu()">Start Simulation</button>
@@ -543,6 +930,15 @@
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
                 Start Simulation
+              </button>
+              <button class="btn-secondary flex items-center gap-2" onclick="showPage('convert')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="17 1 21 5 17 9"></polyline>
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                  <polyline points="7 23 3 19 7 15"></polyline>
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+                NFA→DFA Converter
               </button>
               <button class="btn-secondary flex items-center gap-2" onclick="showPage('learn')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -652,7 +1048,7 @@
             <h3 class="text-xl font-semibold mb-3">Interactive Builder</h3>
             <p style="color: var(--text-secondary);">Click to add states, drag to reposition, click source then target to draw edges. Intuitive visual editor makes building automata effortless.</p>
           </div>
-          <div class="card reveal-section" style="animation-delay: 0.6s;">
+          <div class="card reveal-section" style="animation-delay: 0.6s; cursor:pointer;" onclick="showPage('convert')">
             <div class="feature-icon" style="background: linear-gradient(135deg, rgba(10,132,255,0.15), rgba(52,199,89,0.1)); color: #0a84ff;">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 20V10"></path>
@@ -661,7 +1057,8 @@
               </svg>
             </div>
             <h3 class="text-xl font-semibold mb-3">NFA to DFA Conversion</h3>
-            <p style="color: var(--text-secondary);">Convert any NFA to its equivalent DFA automatically using the subset construction algorithm. Visualize the result in real-time.</p>
+            <p style="color: var(--text-secondary);">Convert any NFA to its equivalent DFA automatically using the subset construction algorithm. Watch every ε-closure, move, and state creation — step by step.</p>
+            <p class="mt-3 text-sm font-semibold" style="color:var(--accent);">Open Converter →</p>
           </div>
         </div>
       </div>
@@ -724,7 +1121,7 @@
             </svg>
             Load Example
           </button>
-          <button class="btn-secondary flex items-center gap-2" onclick="convertNFAtoDFA()" id="convertBtn" style="display:none;">
+          <button class="btn-secondary flex items-center gap-2" onclick="convFromSimulatorAndGo()" id="convertBtn" style="display:none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="17 1 21 5 17 9"></polyline>
               <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
@@ -1099,7 +1496,344 @@
     </div>
   </section>
 
+  <!-- ============================================
+       NFA → DFA CONVERTER PAGE
+       ============================================ -->
+  <section id="page-convert" class="page-section pt-24 min-h-screen" style="background: var(--bg-primary);">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+      <!-- Page Header -->
+      <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-8 animate-fade-in-up">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-3" style="background: rgba(52,199,89,0.12); color: #34c759;">
+            <span class="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+            Subset Construction Algorithm
+          </div>
+          <h1 class="text-3xl font-bold mb-2">NFA → DFA Converter</h1>
+          <p style="color: var(--text-secondary);">Watch every step of the subset construction unfold — from ε-closures to the final DFA.</p>
+        </div>
+        <div class="flex gap-3 flex-shrink-0">
+          <button class="btn-secondary flex items-center gap-2 text-sm" onclick="convLoadFromSimulator()" title="Copy current Simulator NFA into the converter">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            Use Simulator NFA
+          </button>
+          <button class="btn-secondary flex items-center gap-2 text-sm" onclick="convToggleConcepts()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            How It Works
+          </button>
+        </div>
+      </div>
+
+      <!-- "How It Works" collapsible -->
+      <div id="convConceptPanel" style="display:none;" class="mb-6 animate-fade-in">
+        <div class="concept-panel">
+          <h3 class="font-bold text-lg mb-4">Subset Construction — The Algorithm</h3>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <div class="concept-step">
+                <div class="concept-step-num">1</div>
+                <div>
+                  <p class="font-semibold text-sm mb-1">Compute <span class="conv-tooltip" data-tip="ε-closure(S) = all states reachable from S using only ε-transitions (without consuming any input symbol)">ε-closure</span> of Start State</p>
+                  <p class="text-sm" style="color:var(--text-secondary);">The set of all NFA states reachable from q₀ via ε-transitions becomes the first DFA state.</p>
+                </div>
+              </div>
+              <div class="concept-step">
+                <div class="concept-step-num">2</div>
+                <div>
+                  <p class="font-semibold text-sm mb-1">Compute <span class="conv-tooltip" data-tip="move(S, a) = { t | q→t is a transition on 'a' for some q ∈ S }">move(S, a)</span> for Each Symbol</p>
+                  <p class="text-sm" style="color:var(--text-secondary);">For each DFA state S and each input symbol a, find all NFA states reachable by reading a from any state in S.</p>
+                </div>
+              </div>
+              <div class="concept-step">
+                <div class="concept-step-num">3</div>
+                <div>
+                  <p class="font-semibold text-sm mb-1">Close Under ε-Transitions</p>
+                  <p class="text-sm" style="color:var(--text-secondary);">Take the ε-closure of move(S, a) to get the complete next DFA state.</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="concept-step">
+                <div class="concept-step-num">4</div>
+                <div>
+                  <p class="font-semibold text-sm mb-1">Add New DFA States</p>
+                  <p class="text-sm" style="color:var(--text-secondary);">If ε-closure(move(S,a)) is not already a DFA state, add it to the worklist.</p>
+                </div>
+              </div>
+              <div class="concept-step">
+                <div class="concept-step-num">5</div>
+                <div>
+                  <p class="font-semibold text-sm mb-1">Identify Accept States</p>
+                  <p class="text-sm" style="color:var(--text-secondary);">A DFA state is accepting if it contains <em>any</em> NFA accepting state.</p>
+                </div>
+              </div>
+              <div class="concept-step">
+                <div class="concept-step-num">6</div>
+                <div>
+                  <p class="font-semibold text-sm mb-1">Repeat Until Complete</p>
+                  <p class="text-sm" style="color:var(--text-secondary);">Continue until all DFA states have been processed for every symbol. An NFA with n states produces at most 2ⁿ DFA states.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MAIN GRID: Examples + NFA (left) | Step Panel + DFA (right) ── -->
+      <div class="grid lg:grid-cols-5 gap-6 mb-6">
+
+        <!-- LEFT: NFA Input Panel (2 columns) -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+
+          <!-- Preset Example Picker -->
+          <div class="card p-4">
+            <h3 class="font-semibold mb-3 text-sm uppercase tracking-wide" style="color:var(--text-tertiary);">Preloaded NFA Examples</h3>
+            <div class="space-y-2" id="convExampleCards">
+              <!-- Example 1 -->
+              <div class="example-card active" id="convEx1" onclick="convLoadExample(1)">
+                <div class="example-card-title">① Strings Ending in "ab"</div>
+                <div class="example-card-desc">NFA over {a,b} — accepts any string whose last two chars are "ab". 3 states, no ε-transitions.</div>
+              </div>
+              <!-- Example 2 -->
+              <div class="example-card" id="convEx2" onclick="convLoadExample(2)">
+                <div class="example-card-title">② Contains "aa" Substring</div>
+                <div class="example-card-desc">NFA over {a,b} — accepts strings containing "aa". Classic ε-free NFA with non-determinism.</div>
+              </div>
+              <!-- Example 3 -->
+              <div class="example-card" id="convEx3" onclick="convLoadExample(3)">
+                <div class="example-card-title">③ With ε-Transitions (a|ε)b*</div>
+                <div class="example-card-desc">NFA with ε-transitions — accepts the language (a|ε)b*. Demonstrates ε-closure computation.</div>
+              </div>
+              <!-- Example 4 -->
+              <div class="example-card" id="convEx4" onclick="convLoadExample(4)">
+                <div class="example-card-title">④ Even Number of a's  (ε-NFA)</div>
+                <div class="example-card-desc">NFA over {a,b} with 4 states and multiple ε-transitions. Rich subset construction showing state explosion.</div>
+              </div>
+              <!-- Custom NFA -->
+              <button class="example-card w-full text-left" onclick="convOpenCustomModal()" style="border-style:dashed;">
+                <div class="example-card-title flex items-center gap-2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  Define Your Own NFA
+                </div>
+                <div class="example-card-desc">Enter states, alphabet, transitions, and accept states manually.</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- NFA Canvas -->
+          <div class="canvas-container" id="convNfaContainer" style="height: 300px; position:relative;">
+            <div class="canvas-label-badge canvas-label-nfa">NFA</div>
+            <canvas id="convNfaCanvas" style="display:block;"></canvas>
+          </div>
+
+          <!-- NFA Transition Table -->
+          <div class="card p-4">
+            <h3 class="font-semibold mb-3 text-sm uppercase tracking-wide" style="color:var(--text-tertiary);">NFA Transition Function δ</h3>
+            <div class="overflow-x-auto">
+              <table class="transition-table" id="convNfaTable">
+                <thead><tr id="convNfaTableHead"><th>State</th></tr></thead>
+                <tbody id="convNfaTableBody"><tr><td colspan="5" class="text-center" style="color:var(--text-tertiary);padding:16px;">Load an example to begin</td></tr></tbody>
+              </table>
+            </div>
+            <div class="mt-3 flex gap-4 text-xs" style="color:var(--text-tertiary);">
+              <span>→ = start state</span>
+              <span>* = accept state</span>
+              <span>ε = epsilon transition</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Step Panel + DFA Canvas (3 columns) -->
+        <div class="lg:col-span-3 flex flex-col gap-4">
+
+          <!-- Step Info Panel -->
+          <div class="step-panel" id="convStepPanel">
+            <div class="step-phase-bar step-phase-idle" id="convPhaseBar"></div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="step-number-badge" id="convStepBadge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>
+                Ready
+              </span>
+              <div class="conv-progress-track" style="width:160px;">
+                <div class="conv-progress-fill" id="convProgressFill" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="step-title" id="convStepTitle">Select an example and click "Convert Step-by-Step"</div>
+            <div class="step-explanation" id="convStepExpl" style="color:var(--text-secondary);">The subset construction algorithm converts any NFA to an equivalent DFA. Load one of the preloaded examples on the left, then press Convert to begin the interactive walkthrough.</div>
+
+            <!-- State mapping banner (visible when a new DFA state is created) -->
+            <div id="convMappingBanner" style="display:none;" class="mt-4 p-3 rounded-12" style="background:var(--accent-light); border-radius:12px;">
+              <p class="text-xs font-semibold mb-2" style="color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">New DFA State Created</p>
+              <div id="convMappingText" class="font-mono font-bold" style="color:var(--accent); font-size:15px;"></div>
+            </div>
+          </div>
+
+          <!-- DFA Canvas -->
+          <div class="canvas-container" id="convDfaContainer" style="height: 300px; position:relative;">
+            <div class="canvas-label-badge canvas-label-dfa">DFA</div>
+            <canvas id="convDfaCanvas" style="display:block;"></canvas>
+          </div>
+
+          <!-- DFA State Mapping Cards -->
+          <div class="card p-4" id="convMappingsCard">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold text-sm uppercase tracking-wide" style="color:var(--text-tertiary);">DFA State Composition</h3>
+              <span class="text-xs" style="color:var(--text-tertiary);">each DFA state = subset of NFA states</span>
+            </div>
+            <div class="mapping-container" id="convMappingChips">
+              <span style="color:var(--text-tertiary);font-size:13px;">States will appear here as they are discovered</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CONTROLS BAR ── -->
+      <div class="card p-5 mb-6">
+        <div class="flex flex-wrap items-center gap-4">
+          <!-- Start / Reset -->
+          <div class="flex gap-3">
+            <button class="conv-btn conv-btn-secondary" onclick="convReset()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              Reset
+            </button>
+            <button class="conv-btn conv-btn-primary" id="convStartBtn" onclick="convStart()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Convert Step-by-Step
+            </button>
+          </div>
+
+          <!-- Playback controls (shown after conversion starts) -->
+          <div class="conv-hidden flex items-center gap-2" id="convPlayControls">
+            <button class="conv-btn-icon" id="convPrevBtn" onclick="convPrev()" title="Previous Step (←)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+            </button>
+            <button class="conv-btn-icon" id="convPlayBtn" onclick="convToggleAutoPlay()" title="Auto-Play (Space)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="convPlayIcon"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="convPauseIcon" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+            <button class="conv-btn-icon" id="convNextBtn" onclick="convNext()" title="Next Step (→)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+            </button>
+          </div>
+
+          <!-- Speed slider (shown during conversion) -->
+          <div class="conv-hidden speed-control" id="convSpeedControl">
+            <label for="convSpeedSlider">Speed</label>
+            <input type="range" id="convSpeedSlider" min="1" max="5" value="3" step="1" oninput="convUpdateSpeed(this.value)">
+            <span class="speed-val" id="convSpeedVal">1×</span>
+          </div>
+
+          <!-- Step counter + keyboard hint -->
+          <div class="flex-1 flex items-center gap-4 justify-end flex-wrap">
+            <span class="text-xs" style="color:var(--text-tertiary);">
+              <span class="kbd">←</span><span class="kbd">→</span> step &nbsp; <span class="kbd">Space</span> play
+            </span>
+            <span class="font-mono text-sm" id="convStepCounter" style="color:var(--text-secondary);">Step 0 / 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DFA TRANSITION TABLE (built live) ── -->
+      <div class="card p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-semibold text-lg mb-1">DFA Transition Table</h3>
+            <p class="text-sm" style="color:var(--text-secondary);">Rows are added as new DFA states are discovered. Cells fill as transitions are computed.</p>
+          </div>
+          <div class="flex gap-2 text-xs">
+            <span class="px-2 py-1 rounded-full" style="background:rgba(52,199,89,0.12);color:#34c759;">* = accept</span>
+            <span class="px-2 py-1 rounded-full" style="background:var(--accent-light);color:var(--accent);">→ = start</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="transition-table" id="convDfaTable" style="min-width:400px;">
+            <thead><tr id="convDfaTableHead"><th>DFA State</th><th>Subset</th></tr></thead>
+            <tbody id="convDfaTableBody">
+              <tr><td colspan="99" class="text-center" style="color:var(--text-tertiary);padding:24px;">Conversion will populate this table</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── EDUCATIONAL SUMMARY (after conversion) ── -->
+      <div class="card p-6" id="convSummaryCard" style="display:none;">
+        <h3 class="font-bold text-xl mb-4 flex items-center gap-3">
+          <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white" style="background:linear-gradient(135deg,#34c759,#30d158);">✓</span>
+          Conversion Complete
+        </h3>
+        <div id="convSummaryBody" class="grid md:grid-cols-3 gap-6"></div>
+        <!-- Action banner -->
+        <div class="conv-action-banner">
+          <div>
+            <p class="font-semibold text-sm">What's next?</p>
+            <p class="text-sm mt-1" style="color:var(--text-secondary);">Load the generated DFA into the Simulator to run input string tests on it.</p>
+          </div>
+          <div class="flex gap-3 flex-wrap">
+            <button class="conv-btn conv-btn-primary" onclick="convSendToSimulator()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Test in Simulator
+            </button>
+            <button class="conv-btn conv-btn-secondary" onclick="convExportDFA()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Export DFA JSON
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /max-w-7xl -->
+  </section>
+
+  <!-- Custom NFA Input Modal -->
+  <div id="convCustomModal" style="display:none;">
+    <div class="conv-modal-box">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-bold">Define Your Own NFA</h3>
+        <button class="btn-icon" onclick="convCloseCustomModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="conv-modal-field">
+        <label class="conv-modal-label">States <span style="color:var(--error);">*</span></label>
+        <input type="text" id="customStates" class="input-field" placeholder="q0, q1, q2" value="q0, q1, q2">
+        <p class="conv-modal-hint">Comma-separated state names</p>
+      </div>
+
+      <div class="conv-modal-field">
+        <label class="conv-modal-label">Alphabet <span style="color:var(--error);">*</span></label>
+        <input type="text" id="customAlphabet" class="input-field" placeholder="a, b" value="a, b">
+        <p class="conv-modal-hint">Comma-separated symbols (ε is added automatically)</p>
+      </div>
+
+      <div class="conv-modal-field">
+        <label class="conv-modal-label">Start State <span style="color:var(--error);">*</span></label>
+        <input type="text" id="customStart" class="input-field" placeholder="q0" value="q0">
+      </div>
+
+      <div class="conv-modal-field">
+        <label class="conv-modal-label">Accept States <span style="color:var(--error);">*</span></label>
+        <input type="text" id="customAccept" class="input-field" placeholder="q2" value="q2">
+        <p class="conv-modal-hint">Comma-separated</p>
+      </div>
+
+      <div class="conv-modal-field">
+        <label class="conv-modal-label">Transitions <span style="color:var(--error);">*</span></label>
+        <textarea id="customTransitions" class="input-field" rows="6" placeholder="q0, a, q0&#10;q0, a, q1&#10;q1, b, q2&#10;q0, ε, q1" style="resize:vertical; line-height:1.6;">q0, a, q0
+q0, a, q1
+q1, b, q2</textarea>
+        <p class="conv-modal-hint">One per line: <code style="color:var(--accent);">from, symbol, to</code> &nbsp;|&nbsp; Use ε for epsilon transitions</p>
+      </div>
+
+      <div class="flex gap-3 mt-2">
+        <button class="btn-secondary flex-1" onclick="convCloseCustomModal()">Cancel</button>
+        <button class="btn-primary flex-1" onclick="convApplyCustomNFA()">Apply NFA</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Transition Symbol Modal -->
+
   <div id="symbolModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
     <div class="card max-w-sm w-full p-6 animate-fade-in-up">
       <h3 class="text-lg font-semibold mb-1">Enter Transition Symbol</h3>
@@ -2432,6 +3166,990 @@
     } else {
       init();
     }
+
+    // ============================================================
+    //  NFA → DFA CONVERTER  —  Subset Construction Visualizer
+    //  All state is isolated in the `conv` object so it never
+    //  touches the Simulator's global variables.
+    // ============================================================
+
+    /* ── Converter state object ── */
+    const conv = {
+      /* NFA definition */
+      nfaStates:      [],   // [{id, label, x, y}, ...]
+      nfaTransitions: [],   // [{from, to, symbol}, ...]
+      nfaStart:       null,
+      nfaAccept:      new Set(),
+      nfaAlphabet:    ['a', 'b'],
+
+      /* Conversion steps */
+      steps:          [],
+      stepIndex:      -1,
+      autoInterval:   null,
+      autoDelay:      900,     // ms — updated by speed slider
+
+      /* Complete DFA data (computed once per conversion) */
+      dfaStatesMap:   new Map(),  // setKey -> {label, nfaStates:Set}
+      dfaAllTrans:    [],
+      dfaAccept:      new Set(),
+      dfaStartLabel:  null,       // label of the first DFA state
+      dfaPositions:   new Map(),  // label -> {x, y}
+
+      /* Canvas refs */
+      nfaCanvas: null, nfaCtx: null,
+      dfaCanvas: null, dfaCtx: null,
+
+      selectedExample: 1,
+    };
+
+    // ── DFA state label: 0→A, 1→B, … ──
+    function dfaLabel(i) { return i < 26 ? String.fromCharCode(65 + i) : 'S' + i; }
+
+    // ── Sorted set key ──
+    function setKey(s) { return [...s].sort().join(','); }
+
+    // ── ε-closure ──
+    function convEpsClosure(stateSet) {
+      const closure = new Set(stateSet);
+      const queue   = [...stateSet];
+      while (queue.length) {
+        const s = queue.shift();
+        for (const t of conv.nfaTransitions) {
+          if (t.from === s && t.symbol === 'ε' && !closure.has(t.to)) {
+            closure.add(t.to); queue.push(t.to);
+          }
+        }
+      }
+      return closure;
+    }
+
+    // ── move(stateSet, symbol) ──
+    function convMove(stateSet, symbol) {
+      const result = new Set();
+      for (const s of stateSet)
+        for (const t of conv.nfaTransitions)
+          if (t.from === s && t.symbol === symbol) result.add(t.to);
+      return result;
+    }
+
+    // ============================================================
+    //  TOAST NOTIFICATION SYSTEM
+    // ============================================================
+    function convToast(msg, type = 'info', duration = 3200) {
+      const container = document.getElementById('convToastContainer');
+      const icons = {
+        success: '✓', error: '✗', info: 'ℹ', warn: '⚠'
+      };
+      const toast = document.createElement('div');
+      toast.className = `conv-toast ${type}`;
+      toast.innerHTML = `<span style="font-size:16px;font-weight:700;">${icons[type] || 'ℹ'}</span><span>${msg}</span>`;
+      container.appendChild(toast);
+      const remove = () => {
+        toast.classList.add('leaving');
+        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+      };
+      setTimeout(remove, duration);
+      toast.addEventListener('click', remove);
+    }
+
+    // ============================================================
+    //  STEP GENERATOR  —  full subset construction, every step
+    // ============================================================
+    function convGenSteps() {
+      const steps  = [];
+      const alpha  = conv.nfaAlphabet.filter(s => s !== 'ε');
+      const nfaAcc = conv.nfaAccept;
+
+      const dfaMap   = new Map();
+      const dfaTrans = [];
+      let   counter  = 0;
+
+      function snap() {
+        // Deep-clone the map for this step snapshot
+        const m = new Map();
+        for (const [k, v] of dfaMap) m.set(k, { label: v.label, nfaStates: new Set(v.nfaStates) });
+        return { dfaMapSnap: m, dfaTransSnap: [...dfaTrans] };
+      }
+
+      // ── STEP 0: ε-closure of start state ──
+      const initSet   = convEpsClosure(new Set([conv.nfaStart]));
+      const initKey   = setKey(initSet);
+      const initLabel = dfaLabel(counter++);
+      dfaMap.set(initKey, { label: initLabel, nfaStates: initSet });
+      conv.dfaStartLabel = initLabel;  // cache start label
+
+      const initIsAcc = [...initSet].some(s => nfaAcc.has(s));
+      steps.push({
+        phase:        'init',
+        title:        `ε-closure({ ${conv.nfaStart} }) = { ${[...initSet].join(', ')} }`,
+        explanation:  `We compute the <strong>ε-closure</strong> of the NFA start state "${conv.nfaStart}" — every state reachable via ε-transitions without consuming any input. This set becomes the first DFA state, labeled "<strong>${initLabel}</strong>".${initIsAcc ? `<br>Since it contains an NFA accept state, <strong>${initLabel} is also a DFA accept state ✓</strong>.` : ''}`,
+        nfaHighlight: new Set([conv.nfaStart]),
+        nfaEpsDest:   initSet,
+        dfaHighlight: new Set([initLabel]),
+        newDfaState:  initLabel,
+        newDfaIsAcc:  initIsAcc,
+        mapping:      `${initLabel} = { ${[...initSet].join(', ')} }`,
+        activeTrans:  [],
+        ...snap(),
+      });
+
+      const worklist = [initSet];
+
+      while (worklist.length > 0) {
+        const current   = worklist.shift();
+        const curKey    = setKey(current);
+        const curEntry  = dfaMap.get(curKey);
+
+        for (const sym of alpha) {
+
+          // ── MOVE step ──
+          const moved     = convMove(current, sym);
+          const moveTrans = conv.nfaTransitions.filter(
+            t => current.has(t.from) && t.symbol === sym
+          );
+          steps.push({
+            phase:        'move',
+            title:        `move({ ${[...current].join(', ')} }, "${sym}") = { ${moved.size ? [...moved].join(', ') : '∅'} }`,
+            explanation:  moved.size
+              ? `From DFA state "<strong>${curEntry.label}</strong>" ({${[...current].join(', ')}}), on input "<strong>${sym}</strong>", we follow all NFA transitions labeled "${sym}". Each highlighted orange state is a source, and the arrows lead to the reachable set.`
+              : `From DFA state "<strong>${curEntry.label}</strong>", no NFA state in {${[...current].join(', ')}} has a "${sym}"-transition. The result is <strong>∅</strong> (dead — no DFA transition on "${sym}" from ${curEntry.label}).`,
+            nfaHighlight: current,
+            nfaMoveDest:  moved,
+            dfaHighlight: new Set([curEntry.label]),
+            activeTrans:  moveTrans,
+            mapping:      '',
+            ...snap(),
+          });
+
+          if (moved.size === 0) continue;
+
+          // ── ε-CLOSURE step ──
+          const closed  = convEpsClosure(moved);
+          const epsDiff = [...closed].filter(s => !moved.has(s));
+          const epsTrans= conv.nfaTransitions.filter(
+            t => moved.has(t.from) && t.symbol === 'ε' && closed.has(t.to)
+          );
+          steps.push({
+            phase:        'epsilon',
+            title:        `ε-closure({ ${[...moved].join(', ')} }) = { ${[...closed].join(', ')} }`,
+            explanation:  epsDiff.length
+              ? `Taking the <strong>ε-closure</strong> adds { ${epsDiff.join(', ')} } via ε-transitions. The complete next state is { ${[...closed].join(', ')} }.`
+              : `No ε-transitions leave {${[...moved].join(', ')}}, so ε-closure equals the move result itself.`,
+            nfaHighlight: moved,
+            nfaEpsDest:   closed,
+            dfaHighlight: new Set([curEntry.label]),
+            activeTrans:  epsTrans,
+            mapping:      '',
+            ...snap(),
+          });
+
+          // ── NEW DFA STATE ──
+          const closedKey = setKey(closed);
+          if (!dfaMap.has(closedKey)) {
+            const newLabel  = dfaLabel(counter++);
+            const newIsAcc  = [...closed].some(s => nfaAcc.has(s));
+            dfaMap.set(closedKey, { label: newLabel, nfaStates: closed });
+            worklist.push(closed);
+            steps.push({
+              phase:        'new_state',
+              title:        `New DFA state "${newLabel}" = { ${[...closed].join(', ')} }`,
+              explanation:  `The set {${[...closed].join(', ')}} is new — we create DFA state "<strong>${newLabel}</strong>" and add it to the worklist.${newIsAcc ? `<br><strong>${newLabel} is an accepting state ✓</strong> (contains NFA accept state).` : ''}`,
+              nfaHighlight: closed,
+              dfaHighlight: new Set([curEntry.label, newLabel]),
+              newDfaState:  newLabel,
+              newDfaIsAcc:  newIsAcc,
+              activeTrans:  [],
+              mapping:      `${newLabel} = { ${[...closed].join(', ')} }`,
+              ...snap(),
+            });
+          }
+
+          // ── ADD DFA TRANSITION ──
+          const toEntry = dfaMap.get(closedKey);
+          dfaTrans.push({ from: curEntry.label, to: toEntry.label, symbol: sym });
+          steps.push({
+            phase:        'transition',
+            title:        `δ(${curEntry.label}, "${sym}") = ${toEntry.label}`,
+            explanation:  `DFA transition recorded: from "<strong>${curEntry.label}</strong>" on "<strong>${sym}</strong>" → "<strong>${toEntry.label}</strong>". This row/cell is now filled in the DFA table below.`,
+            nfaHighlight: current,
+            dfaHighlight: new Set([curEntry.label, toEntry.label]),
+            newTransition: { from: curEntry.label, to: toEntry.label, symbol: sym },
+            activeTrans:  [],
+            mapping:      '',
+            ...snap(),
+          });
+        }
+      }
+
+      // ── DONE ──
+      const accLabels = new Set(
+        [...dfaMap.values()]
+          .filter(e => [...e.nfaStates].some(s => nfaAcc.has(s)))
+          .map(e => e.label)
+      );
+      steps.push({
+        phase:        'done',
+        title:        '🎉 Conversion Complete!',
+        explanation:  `The subset construction is finished. The equivalent DFA has <strong>${dfaMap.size}</strong> state(s) and <strong>${dfaTrans.length}</strong> transition(s). Accept states: <strong>{ ${[...accLabels].join(', ') || 'none'} }</strong>. The DFA is shown below — click "<strong>Test in Simulator</strong>" to run input strings against it.`,
+        nfaHighlight: new Set(),
+        dfaHighlight: accLabels,
+        activeTrans:  [],
+        mapping:      '',
+        isComplete:   true,
+        dfaAccLabels: accLabels,
+        ...snap(),
+      });
+
+      conv.dfaStatesMap = dfaMap;
+      conv.dfaAllTrans  = dfaTrans;
+      conv.dfaAccept    = accLabels;
+
+      return steps;
+    }
+
+    // ============================================================
+    //  CANVAS DRAWING
+    // ============================================================
+    const CONV_R  = 26;
+    const CONV_IR = 19;
+
+    function convCC(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+    function convGrid(ctx, canvas) {
+      ctx.strokeStyle = convCC('--border') || 'rgba(0,0,0,0.05)';
+      ctx.lineWidth   = 1;
+      for (let x = 0; x <= canvas.width;  x += 36) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+      for (let y = 0; y <= canvas.height; y += 36) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y);  ctx.stroke(); }
+    }
+
+    function convDrawState(ctx, state, isStart, isAccept, highlight) {
+      const baseCol  = convCC('--node-default') || '#e5e5ea';
+      const actCol   = convCC('--node-active')  || '#0071e3';
+      const accCol   = convCC('--node-accept')  || '#34c759';
+      const textCol  = convCC('--text-primary') || '#1d1d1f';
+      const warnCol  = '#ff9500';
+      const purpCol  = '#af52de';
+
+      let fillCol, strokeCol, textFill;
+      switch (highlight) {
+        case 'active':      fillCol = warnCol;  strokeCol = warnCol;  textFill = '#fff'; break;
+        case 'new':         fillCol = purpCol;  strokeCol = purpCol;  textFill = '#fff'; break;
+        case 'result':      fillCol = actCol;   strokeCol = actCol;   textFill = '#fff'; break;
+        case 'done-accept': fillCol = accCol+'50'; strokeCol = accCol; textFill = textCol; break;
+        default:
+          if (isAccept) { fillCol = accCol+'30'; strokeCol = accCol; textFill = textCol; }
+          else          { fillCol = baseCol;     strokeCol = baseCol; textFill = textCol; }
+      }
+
+      // glow ring
+      if (highlight && highlight !== 'normal') {
+        ctx.save(); ctx.shadowColor = strokeCol; ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.arc(state.x, state.y, CONV_R+5, 0, Math.PI*2);
+        ctx.fillStyle = strokeCol+'28'; ctx.fill(); ctx.restore();
+      }
+
+      ctx.beginPath(); ctx.arc(state.x, state.y, CONV_R, 0, Math.PI*2);
+      ctx.fillStyle = fillCol; ctx.fill();
+      ctx.strokeStyle = strokeCol; ctx.lineWidth = 2.5; ctx.stroke();
+
+      if (isAccept) {
+        ctx.beginPath(); ctx.arc(state.x, state.y, CONV_IR, 0, Math.PI*2);
+        ctx.strokeStyle = textFill === '#fff' ? 'rgba(255,255,255,0.55)' : strokeCol;
+        ctx.lineWidth = 1.8; ctx.stroke();
+      }
+
+      ctx.fillStyle = textFill;
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(state.label, state.x, state.y);
+
+      if (isStart) {
+        const ax = state.x - CONV_R - 28, ex = state.x - CONV_R - 5;
+        ctx.beginPath(); ctx.moveTo(ax, state.y); ctx.lineTo(ex, state.y);
+        ctx.strokeStyle = textCol; ctx.lineWidth = 2; ctx.stroke();
+        const ang = 0;
+        ctx.beginPath();
+        ctx.moveTo(ex, state.y);
+        ctx.lineTo(ex - 9*Math.cos(ang - Math.PI/6), state.y - 9*Math.sin(ang - Math.PI/6));
+        ctx.lineTo(ex - 9*Math.cos(ang + Math.PI/6), state.y - 9*Math.sin(ang + Math.PI/6));
+        ctx.closePath(); ctx.fillStyle = textCol; ctx.fill();
+      }
+    }
+
+    /* Group parallel transitions (same from/to) — returns [{from,to,symbols:[]}] */
+    function groupEdges(transitions) {
+      const map = new Map();
+      for (const t of transitions) {
+        const k = t.from + '|||' + t.to;
+        if (!map.has(k)) map.set(k, { from: t.from, to: t.to, symbols: [] });
+        if (!map.get(k).symbols.includes(t.symbol)) map.get(k).symbols.push(t.symbol);
+      }
+      return [...map.values()];
+    }
+
+    function convDrawEdge(ctx, fromSt, toSt, label, isActive, curveOffset = 28) {
+      const accentCol = convCC('--accent')       || '#0071e3';
+      const textCol   = convCC('--text-primary') || '#1d1d1f';
+      const bgCol     = convCC('--bg-secondary') || '#fff';
+      const edgeCol   = isActive ? accentCol : (convCC('--text-tertiary') || '#86868b');
+      const isSelf    = fromSt.id === toSt.id;
+
+      let sX, sY, eX, eY, cX, cY;
+      if (isSelf) {
+        const ang = -Math.PI / 4, sp = 0.55;
+        sX = fromSt.x + CONV_R*Math.cos(ang-sp); sY = fromSt.y + CONV_R*Math.sin(ang-sp);
+        eX = fromSt.x + CONV_R*Math.cos(ang+sp); eY = fromSt.y + CONV_R*Math.sin(ang+sp);
+        cX = fromSt.x + (CONV_R+60)*Math.cos(ang); cY = fromSt.y + (CONV_R+60)*Math.sin(ang);
+      } else {
+        const dx = toSt.x-fromSt.x, dy = toSt.y-fromSt.y;
+        const ang = Math.atan2(dy,dx), off = CONV_R+4;
+        sX = fromSt.x + off*Math.cos(ang); sY = fromSt.y + off*Math.sin(ang);
+        eX = toSt.x   - off*Math.cos(ang); eY = toSt.y   - off*Math.sin(ang);
+        const mx=(fromSt.x+toSt.x)/2, my=(fromSt.y+toSt.y)/2;
+        const perp = ang + Math.PI/2;
+        cX = mx + curveOffset*Math.cos(perp); cY = my + curveOffset*Math.sin(perp);
+      }
+
+      if (isActive) { ctx.save(); ctx.shadowColor = accentCol; ctx.shadowBlur = 12; }
+      ctx.beginPath(); ctx.moveTo(sX,sY); ctx.quadraticCurveTo(cX,cY,eX,eY);
+      ctx.strokeStyle = edgeCol; ctx.lineWidth = isActive ? 2.8 : 1.8; ctx.stroke();
+      if (isActive) ctx.restore();
+
+      const ang2 = Math.atan2(eY-cY, eX-cX);
+      ctx.beginPath(); ctx.moveTo(eX,eY);
+      ctx.lineTo(eX-9*Math.cos(ang2-Math.PI/6), eY-9*Math.sin(ang2-Math.PI/6));
+      ctx.lineTo(eX-9*Math.cos(ang2+Math.PI/6), eY-9*Math.sin(ang2+Math.PI/6));
+      ctx.closePath(); ctx.fillStyle = edgeCol; ctx.fill();
+
+      // label pill
+      const lw = Math.max(24, label.length * 7 + 12);
+      ctx.fillStyle = bgCol;
+      ctx.beginPath(); ctx.roundRect(cX - lw/2, cY - 10, lw, 20, 5);
+      ctx.fill();
+      ctx.fillStyle = textCol;
+      ctx.font = 'bold 12px JetBrains Mono, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, cX, cY);
+    }
+
+    /* render NFA canvas */
+    function convRenderNFA(step) {
+      const canvas = conv.nfaCanvas, ctx = conv.nfaCtx;
+      if (!ctx) return;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      convGrid(ctx,canvas);
+      if (!conv.nfaStates.length) return;
+
+      const hiActive = step ? (step.nfaHighlight || new Set()) : new Set();
+      const hiResult = step ? (step.nfaEpsDest || step.nfaMoveDest || new Set()) : new Set();
+      const hiTrans  = step ? (step.activeTrans || []) : [];
+
+      // Group & draw edges
+      const groups = groupEdges(conv.nfaTransitions);
+      // Build pairs with offset for bidirectional edges
+      const pairCount = {};
+      for (const g of groups) {
+        const k = [g.from,g.to].sort().join('|||');
+        pairCount[k] = (pairCount[k]||0) + 1;
+      }
+      const pairSeen = {};
+      for (const g of groups) {
+        const fromSt = conv.nfaStates.find(s=>s.id===g.from);
+        const toSt   = conv.nfaStates.find(s=>s.id===g.to);
+        if (!fromSt||!toSt) continue;
+        const k = [g.from,g.to].sort().join('|||');
+        const isBi  = pairCount[k] >= 2;
+        const seenN = pairSeen[k] = (pairSeen[k]||0)+1;
+        const offset = g.from===g.to ? 0 : (isBi ? (seenN===1?30:-30) : 28);
+        const label  = g.symbols.join(',');
+        const isAct  = hiTrans.some(at => g.symbols.includes(at.symbol) && at.from===g.from && at.to===g.to);
+        convDrawEdge(ctx, fromSt, toSt, label, isAct, offset);
+      }
+
+      for (const state of conv.nfaStates) {
+        let hl = 'normal';
+        if (hiResult.has(state.id))      hl = 'result';
+        else if (hiActive.has(state.id)) hl = 'active';
+        convDrawState(ctx, state, state.id===conv.nfaStart, conv.nfaAccept.has(state.id), hl);
+      }
+    }
+
+    /* render DFA canvas */
+    function convRenderDFA(step) {
+      const canvas = conv.dfaCanvas, ctx = conv.dfaCtx;
+      if (!ctx) return;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      convGrid(ctx,canvas);
+      if (!step || !step.dfaMapSnap || step.dfaMapSnap.size===0) return;
+
+      const { dfaMapSnap, dfaTransSnap } = step;
+      const hiDfa    = step.dfaHighlight || new Set();
+      const newState = step.newDfaState  || null;
+      const newTrans = step.newTransition || null;
+
+      const stateObjs = [];
+      for (const [,entry] of dfaMapSnap) {
+        const pos = conv.dfaPositions.get(entry.label) || {x:canvas.width/2, y:canvas.height/2};
+        stateObjs.push({id:entry.label, label:entry.label, x:pos.x, y:pos.y});
+      }
+
+      // Group & draw DFA edges with bidirectional offset
+      const groups    = groupEdges(dfaTransSnap);
+      const pairCount = {};
+      for (const g of groups) { const k=[g.from,g.to].sort().join('|||'); pairCount[k]=(pairCount[k]||0)+1; }
+      const pairSeen  = {};
+      for (const g of groups) {
+        const fromSt = stateObjs.find(s=>s.id===g.from);
+        const toSt   = stateObjs.find(s=>s.id===g.to);
+        if (!fromSt||!toSt) continue;
+        const k = [g.from,g.to].sort().join('|||');
+        const isBi = pairCount[k]>=2;
+        const sn   = pairSeen[k] = (pairSeen[k]||0)+1;
+        const off  = g.from===g.to ? 0 : (isBi?(sn===1?30:-30):28);
+        const isNewEdge = newTrans && g.from===newTrans.from && g.to===newTrans.to && g.symbols.includes(newTrans.symbol);
+        convDrawEdge(ctx, fromSt, toSt, g.symbols.join(','), !!isNewEdge, off);
+      }
+
+      for (const st of stateObjs) {
+        const isStart  = st.label === conv.dfaStartLabel;
+        const isAccept = conv.dfaAccept.has(st.label);
+        let hl = 'normal';
+        if (step.phase==='done' && isAccept) hl = 'done-accept';
+        else if (st.label===newState)        hl = 'new';
+        else if (hiDfa.has(st.label))        hl = 'active';
+        convDrawState(ctx, st, isStart, isAccept, hl);
+      }
+    }
+
+    // ============================================================
+    //  LAYOUT
+    // ============================================================
+    function convLayoutNFA() {
+      const canvas = conv.nfaCanvas;
+      if (!canvas||!conv.nfaStates.length) return;
+      const n=conv.nfaStates.length, cx=canvas.width/2, cy=canvas.height/2;
+      const r = n===1 ? 0 : Math.min(canvas.width,canvas.height)*0.3;
+      conv.nfaStates.forEach((s,i) => {
+        const ang = (2*Math.PI*i)/n - Math.PI/2;
+        s.x = cx + r*Math.cos(ang); s.y = cy + r*Math.sin(ang);
+      });
+    }
+
+    function convLayoutDFA() {
+      if (!conv.dfaStatesMap.size) return;
+      const canvas = conv.dfaCanvas;
+      const labels = [...conv.dfaStatesMap.values()].map(e=>e.label);
+      const n=labels.length, cx=canvas.width/2, cy=canvas.height/2;
+      const r = n===1 ? 0 : Math.min(canvas.width,canvas.height)*0.31;
+      conv.dfaPositions.clear();
+      labels.forEach((lbl,i) => {
+        const ang = (2*Math.PI*i)/n - Math.PI/2;
+        conv.dfaPositions.set(lbl, {x:cx+r*Math.cos(ang), y:cy+r*Math.sin(ang)});
+      });
+    }
+
+    // ============================================================
+    //  STEP UI
+    // ============================================================
+    const phaseClass = {
+      init:'step-phase-init', move:'step-phase-move', epsilon:'step-phase-epsilon',
+      new_state:'step-phase-new', transition:'step-phase-trans', done:'step-phase-done', idle:'step-phase-idle'
+    };
+    const phaseLabel = {
+      init:'ε-closure Init', move:'Move(S, σ)', epsilon:'ε-closure', new_state:'New State',
+      transition:'Record δ', done:'Complete ✓', idle:'Ready'
+    };
+
+    function convUpdateStepPanel(step, idx) {
+      const total = conv.steps.length;
+      const pct   = total>1 ? Math.round((idx/(total-1))*100) : 0;
+
+      document.getElementById('convPhaseBar').className = `step-phase-bar ${phaseClass[step.phase]||'step-phase-idle'}`;
+      document.getElementById('convStepBadge').innerHTML =
+        `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>
+        ${phaseLabel[step.phase]||'Step'} — ${idx+1}/${total}`;
+      document.getElementById('convStepTitle').textContent  = step.title;
+      document.getElementById('convStepExpl').innerHTML     = step.explanation;
+      document.getElementById('convProgressFill').style.width = pct+'%';
+      document.getElementById('convStepCounter').textContent = `Step ${idx+1} / ${total}`;
+
+      const banner = document.getElementById('convMappingBanner');
+      if (step.mapping) {
+        banner.style.cssText = 'display:block;background:var(--accent-light);border-radius:12px;padding:12px 16px;margin-top:14px;';
+        document.getElementById('convMappingText').textContent = step.mapping;
+      } else { banner.style.display='none'; }
+
+      document.getElementById('convStepPanel').classList.toggle('step-done-glow', step.phase==='done');
+
+      // Disable/enable nav buttons
+      const pb = document.getElementById('convPrevBtn');
+      const nb = document.getElementById('convNextBtn');
+      if (pb) pb.disabled = idx<=0;
+      if (nb) nb.disabled = idx>=conv.steps.length-1;
+    }
+
+    function convUpdateMappingChips(step) {
+      const container = document.getElementById('convMappingChips');
+      if (!step||!step.dfaMapSnap||step.dfaMapSnap.size===0) {
+        container.innerHTML = '<span style="color:var(--text-tertiary);font-size:13px;">States will appear here as they are discovered</span>';
+        return;
+      }
+      let html = '';
+      for (const [,entry] of step.dfaMapSnap) {
+        const isAcc  = conv.dfaAccept.has(entry.label);
+        const isNew  = step.newDfaState===entry.label;
+        const isHigh = step.dfaHighlight&&step.dfaHighlight.has(entry.label);
+        let cls = 'dfa-chip-normal';
+        if (isNew) cls='dfa-chip-new'; else if (isAcc) cls='dfa-chip-accept'; else if (isHigh) cls='dfa-chip-active';
+        const nfaList = [...entry.nfaStates].map(s=>`<span class="nfa-state-chip">${s}</span>`).join('');
+        html += `<div class="dfa-state-chip ${cls}"><strong>${entry.label}</strong>&nbsp;=&nbsp;{&thinsp;${nfaList}&thinsp;}${isAcc?' <span style="color:#34c759;font-size:14px;">✓</span>':''}</div>`;
+      }
+      container.innerHTML = html;
+    }
+
+    function convUpdateDfaTable(step) {
+      if (!step||!step.dfaMapSnap) return;
+      const alpha   = conv.nfaAlphabet.filter(s=>s!=='ε');
+      const thead   = document.getElementById('convDfaTableHead');
+      const tbody   = document.getElementById('convDfaTableBody');
+
+      let hdr = '<th>State</th><th>NFA Subset</th>';
+      alpha.forEach(sym => { hdr+=`<th>${sym}</th>`; });
+      thead.innerHTML = hdr;
+
+      const byState = {};
+      for (const t of step.dfaTransSnap) {
+        if (!byState[t.from]) byState[t.from]={};
+        byState[t.from][t.symbol] = t.to;
+      }
+
+      const hiState = step.newTransition?.from;
+      const hiSym   = step.newTransition?.symbol;
+
+      let body = '';
+      let isFirst = true;
+      for (const [,entry] of step.dfaMapSnap) {
+        const lbl     = entry.label;
+        const isAcc   = conv.dfaAccept.has(lbl);
+        const isStart = lbl === conv.dfaStartLabel;
+        const marker  = (isStart?'→':'') + (isAcc?'*':'');
+        body += `<tr class="${step.newDfaState===lbl?'table-row-new':''}">`;
+        body += `<td style="font-weight:700;">${marker?marker+' ':''}${lbl}</td>`;
+        body += `<td style="color:var(--text-tertiary);font-size:11px;">{${[...entry.nfaStates].join(', ')}}</td>`;
+        alpha.forEach(sym => {
+          const tgt  = byState[lbl]?.[sym];
+          const hiC  = hiState===lbl && hiSym===sym;
+          body += tgt
+            ? `<td class="${hiC?'dfa-table-cell-new':''}" style="font-weight:600;">${tgt}</td>`
+            : `<td class="dfa-table-cell-empty">—</td>`;
+        });
+        body += '</tr>';
+        isFirst = false;
+      }
+      tbody.innerHTML = body || '<tr><td colspan="99" class="text-center" style="color:var(--text-tertiary);padding:20px;">No states yet</td></tr>';
+    }
+
+    function convShowSummary(step) {
+      const card = document.getElementById('convSummaryCard');
+      if (!step||step.phase!=='done') { card.style.display='none'; return; }
+      card.style.display='block';
+      const nfa=conv.nfaStates.length, dfa=conv.dfaStatesMap.size, trans=conv.dfaAllTrans.length;
+      const worst=Math.pow(2,nfa), acc=[...conv.dfaAccept].join(', ')||'none';
+      document.getElementById('convSummaryBody').innerHTML = `
+        <div class="card p-5 text-center">
+          <div class="text-4xl font-bold mb-2" style="color:var(--accent);">${nfa}</div>
+          <div class="font-semibold mb-1">NFA States</div>
+          <div class="text-xs" style="color:var(--text-tertiary);">Original automaton</div>
+        </div>
+        <div class="card p-5 text-center">
+          <div class="text-4xl font-bold mb-2" style="color:#34c759;">${dfa}</div>
+          <div class="font-semibold mb-1">DFA States</div>
+          <div class="text-xs" style="color:var(--text-tertiary);">Worst case: 2ⁿ = ${worst}</div>
+        </div>
+        <div class="card p-5 text-center">
+          <div class="text-4xl font-bold mb-2" style="color:#af52de;">${trans}</div>
+          <div class="font-semibold mb-1">DFA Transitions</div>
+          <div class="text-xs" style="color:var(--text-tertiary);">Accept states: {${acc}}</div>
+        </div>`;
+    }
+
+    // ============================================================
+    //  CONVERTER FLOW
+    // ============================================================
+    function convApplyStep(idx) {
+      const step = conv.steps[idx];
+      conv.stepIndex = idx;
+      convUpdateStepPanel(step, idx);
+      convUpdateMappingChips(step);
+      convUpdateDfaTable(step);
+      convRenderNFA(step);
+      convRenderDFA(step);
+      convShowSummary(step);
+    }
+
+    function convNext() { if (conv.stepIndex<conv.steps.length-1) convApplyStep(conv.stepIndex+1); }
+    function convPrev() { if (conv.stepIndex>0) convApplyStep(conv.stepIndex-1); }
+
+    function convToggleAutoPlay() {
+      if (conv.autoInterval) {
+        clearInterval(conv.autoInterval); conv.autoInterval=null;
+        document.getElementById('convPlayIcon').style.display='block';
+        document.getElementById('convPauseIcon').style.display='none';
+        document.getElementById('convPlayBtn').classList.remove('active');
+      } else {
+        document.getElementById('convPlayIcon').style.display='none';
+        document.getElementById('convPauseIcon').style.display='block';
+        document.getElementById('convPlayBtn').classList.add('active');
+        conv.autoInterval = setInterval(() => {
+          if (conv.stepIndex<conv.steps.length-1) { convNext(); }
+          else { convToggleAutoPlay(); }
+        }, conv.autoDelay);
+      }
+    }
+
+    function convUpdateSpeed(val) {
+      // val: 1(slowest)..5(fastest)  →  delay: 1800ms..250ms
+      const delays = [1800, 1200, 900, 550, 250];
+      conv.autoDelay = delays[parseInt(val)-1];
+      const labels  = ['0.5×','0.8×','1×','1.5×','2×'];
+      document.getElementById('convSpeedVal').textContent = labels[parseInt(val)-1];
+      // Restart interval if currently playing
+      if (conv.autoInterval) {
+        clearInterval(conv.autoInterval);
+        conv.autoInterval = setInterval(() => {
+          if (conv.stepIndex<conv.steps.length-1) convNext(); else convToggleAutoPlay();
+        }, conv.autoDelay);
+      }
+    }
+
+    function convStart() {
+      if (!conv.nfaStates.length||!conv.nfaStart) {
+        convToast('Please load an NFA example first.','warn'); return;
+      }
+      conv.steps     = convGenSteps();
+      conv.stepIndex = -1;
+      convLayoutDFA();
+
+      document.getElementById('convStartBtn').style.display='none';
+      document.getElementById('convPlayControls').classList.replace('conv-hidden','conv-visible');
+      document.getElementById('convSpeedControl').classList.replace('conv-hidden','conv-visible');
+
+      convApplyStep(0);
+      convToast(`Conversion started — ${conv.steps.length} steps to walk through.`,'info',2500);
+    }
+
+    function convReset() {
+      if (conv.autoInterval) { clearInterval(conv.autoInterval); conv.autoInterval=null; }
+      conv.steps=[]; conv.stepIndex=-1;
+      conv.dfaStatesMap.clear(); conv.dfaAllTrans=[]; conv.dfaAccept.clear();
+      conv.dfaPositions.clear(); conv.dfaStartLabel=null;
+
+      document.getElementById('convStartBtn').style.display='block';
+      document.getElementById('convPlayControls').classList.replace('conv-visible','conv-hidden');
+      document.getElementById('convSpeedControl').classList.replace('conv-visible','conv-hidden');
+      document.getElementById('convPlayIcon').style.display='block';
+      document.getElementById('convPauseIcon').style.display='none';
+      document.getElementById('convPlayBtn').classList.remove('active');
+
+      document.getElementById('convPhaseBar').className='step-phase-bar step-phase-idle';
+      document.getElementById('convStepBadge').innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg> Ready`;
+      document.getElementById('convStepTitle').textContent='Click "Convert Step-by-Step" to begin';
+      document.getElementById('convStepExpl').innerHTML='The algorithm will walk you through every ε-closure, move, and DFA state creation step.';
+      document.getElementById('convMappingBanner').style.display='none';
+      document.getElementById('convStepCounter').textContent='Step 0 / 0';
+      document.getElementById('convProgressFill').style.width='0%';
+      document.getElementById('convMappingChips').innerHTML='<span style="color:var(--text-tertiary);font-size:13px;">States will appear here as they are discovered</span>';
+      document.getElementById('convDfaTableBody').innerHTML='<tr><td colspan="99" class="text-center" style="color:var(--text-tertiary);padding:24px;">Conversion will populate this table</td></tr>';
+      document.getElementById('convSummaryCard').style.display='none';
+      document.getElementById('convStepPanel').classList.remove('step-done-glow');
+
+      convRenderNFA(null);
+      convRenderDFA(null);
+    }
+
+    // ============================================================
+    //  PRELOADED EXAMPLES
+    // ============================================================
+    function convLoadExample(n) {
+      conv.selectedExample=n;
+      [1,2,3,4].forEach(i=>document.getElementById('convEx'+i)?.classList.toggle('active',i===n));
+      convReset();
+
+      /* ① Strings ending in "ab" */
+      if (n===1) {
+        conv.nfaAlphabet=['a','b'];
+        conv.nfaStates=[{id:'q0',label:'q0'},{id:'q1',label:'q1'},{id:'q2',label:'q2'}];
+        conv.nfaTransitions=[
+          {from:'q0',to:'q0',symbol:'a'},{from:'q0',to:'q0',symbol:'b'},
+          {from:'q0',to:'q1',symbol:'a'},{from:'q1',to:'q2',symbol:'b'},
+        ];
+        conv.nfaStart='q0'; conv.nfaAccept=new Set(['q2']);
+      }
+      /* ② Contains "aa" */
+      else if (n===2) {
+        conv.nfaAlphabet=['a','b'];
+        conv.nfaStates=[{id:'q0',label:'q0'},{id:'q1',label:'q1'},{id:'q2',label:'q2'}];
+        conv.nfaTransitions=[
+          {from:'q0',to:'q0',symbol:'a'},{from:'q0',to:'q0',symbol:'b'},
+          {from:'q0',to:'q1',symbol:'a'},{from:'q1',to:'q2',symbol:'a'},
+          {from:'q2',to:'q2',symbol:'a'},{from:'q2',to:'q2',symbol:'b'},
+        ];
+        conv.nfaStart='q0'; conv.nfaAccept=new Set(['q2']);
+      }
+      /* ③ (a|ε)b* with ε-transitions */
+      else if (n===3) {
+        conv.nfaAlphabet=['a','b'];
+        conv.nfaStates=[{id:'q0',label:'q0'},{id:'q1',label:'q1'},{id:'q2',label:'q2'}];
+        conv.nfaTransitions=[
+          {from:'q0',to:'q1',symbol:'ε'},{from:'q0',to:'q1',symbol:'a'},
+          {from:'q1',to:'q1',symbol:'b'},{from:'q1',to:'q2',symbol:'ε'},
+        ];
+        conv.nfaStart='q0'; conv.nfaAccept=new Set(['q2']);
+      }
+      /* ④ Even number of a's — ε-NFA with 4 states */
+      else if (n===4) {
+        conv.nfaAlphabet=['a','b'];
+        conv.nfaStates=[
+          {id:'q0',label:'q0'},{id:'q1',label:'q1'},
+          {id:'q2',label:'q2'},{id:'q3',label:'q3'},
+        ];
+        conv.nfaTransitions=[
+          {from:'q0',to:'q1',symbol:'ε'},{from:'q0',to:'q2',symbol:'ε'},
+          {from:'q1',to:'q3',symbol:'a'},{from:'q1',to:'q1',symbol:'b'},
+          {from:'q2',to:'q2',symbol:'b'},{from:'q3',to:'q3',symbol:'a'},
+          {from:'q3',to:'q3',symbol:'b'},{from:'q3',to:'q0',symbol:'ε'},
+        ];
+        conv.nfaStart='q0'; conv.nfaAccept=new Set(['q0','q2']);
+      }
+
+      convLayoutNFA();
+      convRenderNFA(null);
+      convUpdateNfaTable();
+    }
+
+    /* NFA transition table */
+    function convUpdateNfaTable() {
+      const hasEps = conv.nfaTransitions.some(t=>t.symbol==='ε');
+      const cols   = hasEps ? [...conv.nfaAlphabet,'ε'] : [...conv.nfaAlphabet];
+      const thead  = document.getElementById('convNfaTableHead');
+      let hdr = '<th>State</th>'; cols.forEach(sym=>{hdr+=`<th>${sym}</th>`;});
+      thead.innerHTML=hdr;
+
+      const tbody = document.getElementById('convNfaTableBody');
+      let rows = '';
+      for (const state of conv.nfaStates) {
+        const marker=(state.id===conv.nfaStart?'→':'')+(conv.nfaAccept.has(state.id)?'*':'');
+        rows+=`<tr><td style="font-weight:700;">${marker?marker+' ':''}${state.label}</td>`;
+        cols.forEach(sym=>{
+          const targets=conv.nfaTransitions.filter(t=>t.from===state.id&&t.symbol===sym).map(t=>t.to);
+          rows+=`<td>${targets.join(',')||'—'}</td>`;
+        });
+        rows+='</tr>';
+      }
+      tbody.innerHTML=rows||'<tr><td colspan="99" style="color:var(--text-tertiary);text-align:center;padding:12px;">No transitions</td></tr>';
+    }
+
+    // ============================================================
+    //  CUSTOM NFA MODAL
+    // ============================================================
+    function convOpenCustomModal() { document.getElementById('convCustomModal').style.display='flex'; }
+    function convCloseCustomModal(){ document.getElementById('convCustomModal').style.display='none'; }
+
+    function convApplyCustomNFA() {
+      const stateNames  = document.getElementById('customStates').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const alphaSyms   = document.getElementById('customAlphabet').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const startName   = document.getElementById('customStart').value.trim();
+      const acceptNames = document.getElementById('customAccept').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const transLines  = document.getElementById('customTransitions').value.trim().split('\n').filter(Boolean);
+
+      if (!stateNames.length) { convToast('Please enter at least one state.','error'); return; }
+      if (!startName || !stateNames.includes(startName)) { convToast(`Start state "${startName}" not in states list.`,'error'); return; }
+
+      const badAccept = acceptNames.filter(a=>!stateNames.includes(a));
+      if (badAccept.length) { convToast(`Accept state(s) not found: ${badAccept.join(', ')}`, 'error'); return; }
+
+      // Parse transitions
+      const parsedTrans = [];
+      for (const line of transLines) {
+        const parts = line.split(',').map(s=>s.trim());
+        if (parts.length!==3) { convToast(`Invalid transition: "${line}" — expected "from, symbol, to"`,'error'); return; }
+        const [from,sym,to] = parts;
+        if (!stateNames.includes(from)) { convToast(`Unknown state "${from}" in transition.`,'error'); return; }
+        if (!stateNames.includes(to))   { convToast(`Unknown state "${to}" in transition.`,'error'); return; }
+        parsedTrans.push({from, to, symbol:sym});
+      }
+
+      [1,2,3,4].forEach(i=>document.getElementById('convEx'+i)?.classList.remove('active'));
+      convReset();
+
+      conv.nfaAlphabet    = alphaSyms;
+      conv.nfaStates      = stateNames.map(n=>({id:n, label:n}));
+      conv.nfaTransitions = parsedTrans;
+      conv.nfaStart       = startName;
+      conv.nfaAccept      = new Set(acceptNames);
+
+      convLayoutNFA(); convRenderNFA(null); convUpdateNfaTable();
+      convCloseCustomModal();
+      convToast(`Custom NFA loaded: ${stateNames.length} states, ${parsedTrans.length} transitions.`,'success');
+    }
+
+    // ============================================================
+    //  USE SIMULATOR NFA / SEND DFA TO SIMULATOR
+    // ============================================================
+    function convLoadFromSimulator() {
+      if (typeof states==='undefined'||states.length===0) {
+        convToast('The Simulator has no states. Build an NFA there first (switch to NFA mode).','warn'); return;
+      }
+      conv.nfaStates      = states.map(s=>({id:s.id, label:s.label}));
+      conv.nfaTransitions = transitions.map(t=>({from:t.from, to:t.to, symbol:t.symbol}));
+      conv.nfaStart       = startState;
+      conv.nfaAccept      = new Set(acceptStates);
+      conv.nfaAlphabet    = [...alphabet];
+      [1,2,3,4].forEach(i=>document.getElementById('convEx'+i)?.classList.remove('active'));
+      convLayoutNFA(); convReset(); convRenderNFA(null); convUpdateNfaTable();
+      convToast(`Loaded NFA with ${conv.nfaStates.length} state(s) from Simulator.`,'success');
+    }
+
+    /* Simulator NFA→DFA button: copy NFA and navigate to converter */
+    function convFromSimulatorAndGo() {
+      convLoadFromSimulator();
+      showPage('convert');
+    }
+
+    function convSendToSimulator() {
+      if (!conv.dfaStatesMap.size) { convToast('Run the conversion first.','warn'); return; }
+
+      saveToUndo();
+      // Build new state list with positions
+      const canvas = document.getElementById('graphCanvas');
+      const cx=canvas.width/2, cy=canvas.height/2;
+      const entries=[...conv.dfaStatesMap.values()];
+      const n=entries.length;
+      const r=Math.min(canvas.width,canvas.height)*0.32;
+
+      states=[]; transitions=[]; acceptStates.clear();
+      entries.forEach((entry,i) => {
+        const ang=(2*Math.PI*i)/n - Math.PI/2;
+        states.push({id:entry.label, label:entry.label,
+          x: cx+r*Math.cos(ang), y: cy+r*Math.sin(ang)});
+        if (conv.dfaAccept.has(entry.label)) acceptStates.add(entry.label);
+      });
+      transitions = conv.dfaAllTrans.map(t=>({from:t.from,to:t.to,symbol:t.symbol}));
+      startState  = conv.dfaStartLabel;
+      stateCounter= entries.length;
+      document.getElementById('alphabetInput').value = conv.nfaAlphabet.filter(s=>s!=='ε').join(',');
+      updateAlphabet();
+      setMode('DFA');
+      showPage('simulator');
+      convToast('DFA loaded into the Simulator. Press ▶ to test input strings.','success',4000);
+    }
+
+    function convExportDFA() {
+      if (!conv.dfaStatesMap.size) { convToast('Run the conversion first.','warn'); return; }
+      const entries=[...conv.dfaStatesMap.values()];
+      const data = {
+        version:2, mode:'DFA',
+        alphabet: conv.nfaAlphabet.filter(s=>s!=='ε'),
+        startState: conv.dfaStartLabel,
+        acceptStates: [...conv.dfaAccept],
+        states: entries.map(e=>({id:e.label, label:e.label, x:100, y:100})),
+        transitions: conv.dfaAllTrans,
+        nfaSource: { states:conv.nfaStates.map(s=>s.label), example:conv.selectedExample }
+      };
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='converted-dfa.json';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      convToast('DFA exported as converted-dfa.json','success');
+    }
+
+    /* toggle "How It Works" */
+    function convToggleConcepts() {
+      const panel=document.getElementById('convConceptPanel');
+      const isOpen = panel.style.display!=='none';
+      panel.style.display=isOpen?'none':'block';
+    }
+
+    // ============================================================
+    //  KEYBOARD SHORTCUTS (converter page only)
+    // ============================================================
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('page-convert')?.classList.contains('active')) return;
+      if (document.getElementById('convCustomModal')?.style.display==='flex') {
+        if (e.key==='Escape') convCloseCustomModal();
+        return;
+      }
+      if (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+      switch (e.key) {
+        case 'ArrowRight': e.preventDefault(); convNext(); break;
+        case 'ArrowLeft':  e.preventDefault(); convPrev(); break;
+        case ' ':
+          e.preventDefault();
+          if (conv.steps.length) convToggleAutoPlay();
+          else convStart();
+          break;
+        case 'r': case 'R': if (!e.ctrlKey&&!e.metaKey) { e.preventDefault(); convReset(); } break;
+      }
+    });
+
+    // ============================================================
+    //  CANVAS INIT & RESIZE
+    // ============================================================
+    function convInitCanvases() {
+      conv.nfaCanvas=document.getElementById('convNfaCanvas');
+      conv.dfaCanvas=document.getElementById('convDfaCanvas');
+      if (conv.nfaCanvas) conv.nfaCtx=conv.nfaCanvas.getContext('2d');
+      if (conv.dfaCanvas) conv.dfaCtx=conv.dfaCanvas.getContext('2d');
+      convResizeCanvases();
+    }
+
+    function convResizeCanvases() {
+      [['convNfaCanvas','convNfaContainer'],['convDfaCanvas','convDfaContainer']].forEach(([cId,contId])=>{
+        const canvas=document.getElementById(cId), cont=document.getElementById(contId);
+        if (canvas&&cont) { canvas.width=cont.clientWidth; canvas.height=cont.clientHeight; }
+      });
+      convLayoutNFA();
+      if (conv.dfaStatesMap.size) convLayoutDFA();
+      const step=conv.steps[conv.stepIndex];
+      convRenderNFA(step||null);
+      convRenderDFA(step||null);
+    }
+
+    window.addEventListener('resize',()=>{
+      if (document.getElementById('page-convert')?.classList.contains('active')) convResizeCanvases();
+    });
+
+    // MutationObserver: auto-init when page tab becomes active
+    const _convPageEl = document.getElementById('page-convert');
+    if (_convPageEl) {
+      new MutationObserver((muts)=>{
+        for (const m of muts) {
+          if (m.target.id==='page-convert'&&m.target.classList.contains('active')) {
+            setTimeout(()=>{ convResizeCanvases(); if (!conv.nfaStates.length) convLoadExample(1); },60);
+          }
+        }
+      }).observe(_convPageEl,{attributes:true,attributeFilter:['class']});
+    }
+
+    // ── roundRect polyfill (Safari <16, some mobile browsers) ──
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+        if (w<2*r) r=w/2; if (h<2*r) r=h/2;
+        this.moveTo(x+r,y);
+        this.arcTo(x+w,y, x+w,y+h, r);
+        this.arcTo(x+w,y+h, x,y+h, r);
+        this.arcTo(x,y+h, x,y, r);
+        this.arcTo(x,y, x+w,y, r);
+        this.closePath();
+        return this;
+      };
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded',()=>{ convInitCanvases(); });
+    if (document.readyState!=='loading') convInitCanvases();
+
   </script>
 </body>
 </html>
