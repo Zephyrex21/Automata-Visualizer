@@ -1153,12 +1153,12 @@
             <button id="dfaModeBtn" onclick="setMode('DFA')">DFA</button>
             <button id="nfaModeBtn" class="active" onclick="setMode('NFA')">NFA</button>
           </div>
-          <button class="btn-secondary flex items-center gap-2" style="flex-shrink:0;white-space:nowrap;" onclick="loadExample()">
+          <button class="btn-secondary flex items-center gap-2" id="loadExampleBtn" style="flex-shrink:0;white-space:nowrap;" onclick="loadExample()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
             </svg>
-            Load Example
+            <span id="loadExampleLabel">Load Example</span>
           </button>
           <button class="btn-secondary flex items-center gap-2" style="flex-shrink:0;white-space:nowrap;" onclick="convFromSimulatorAndGo()" id="convertBtn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2743,6 +2743,9 @@ q1, b, q2</textarea>
           ? 'Draw an <strong>NFA</strong> here, then click <strong>NFA→DFA</strong> to convert it step-by-step'
           : 'Draw a <strong>DFA</strong> here — every state must have exactly one transition per symbol';
       }
+      // Reset example rotation and update button label for new mode
+      _exampleIndex = 0;
+      _updateExampleBtnLabel();
       resetSimulation();
       render();
       updateConvertBanner();
@@ -3076,31 +3079,241 @@ q1, b, q2</textarea>
     }
 
     // ============================================
-    // EXAMPLE AUTOMATA
+    // EXAMPLE AUTOMATA — rotating, mode-aware, auto-positioned
     // ============================================
 
-    function loadExample() {
-      clearAll();
+    let _exampleIndex = 0; // cycles through examples on each click
+
+    // Helper: place n states in a horizontal row centred on canvas
+    function _row(n) {
       const cx = canvas.width  / 2;
       const cy = canvas.height / 2;
+      const gap = Math.min(180, (canvas.width - 120) / Math.max(n - 1, 1));
+      const ids = [];
+      for (let i = 0; i < n; i++) {
+        const x = cx + (i - (n - 1) / 2) * gap;
+        ids.push(addState(x, cy));
+      }
+      return ids;
+    }
 
-      const q0 = addState(cx - 180, cy);
-      const q1 = addState(cx,       cy);
-      const q2 = addState(cx + 180, cy);
+    // Helper: place n states in a circle centred on canvas
+    function _circle(n) {
+      const cx = canvas.width  / 2;
+      const cy = canvas.height / 2;
+      const r  = Math.min(canvas.width, canvas.height) * 0.28;
+      const ids = [];
+      for (let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+        ids.push(addState(cx + r * Math.cos(angle), cy + r * Math.sin(angle)));
+      }
+      return ids;
+    }
 
-      startState = q0;
-      acceptStates.add(q2);
+    /* ── DFA examples ── */
+    const DFA_EXAMPLES = [
+      {
+        name: 'Ends with "ab"',
+        alphabet: 'a,b',
+        input: 'aabab',
+        build() {
+          const [q0, q1, q2] = _row(3);
+          startState = q0;
+          acceptStates.add(q2);
+          addTransition(q0, q1, 'a'); addTransition(q0, q0, 'b');
+          addTransition(q1, q1, 'a'); addTransition(q1, q2, 'b');
+          addTransition(q2, q1, 'a'); addTransition(q2, q0, 'b');
+        }
+      },
+      {
+        name: 'Even number of a\'s',
+        alphabet: 'a,b',
+        input: 'aabba',
+        build() {
+          const [q0, q1] = _row(2);
+          startState = q0;
+          acceptStates.add(q0);
+          addTransition(q0, q1, 'a'); addTransition(q0, q0, 'b');
+          addTransition(q1, q0, 'a'); addTransition(q1, q1, 'b');
+        }
+      },
+      {
+        name: 'Contains "abb"',
+        alphabet: 'a,b',
+        input: 'aabbb',
+        build() {
+          const [q0, q1, q2, q3] = _row(4);
+          startState = q0;
+          acceptStates.add(q3);
+          addTransition(q0, q1, 'a'); addTransition(q0, q0, 'b');
+          addTransition(q1, q1, 'a'); addTransition(q1, q2, 'b');
+          addTransition(q2, q1, 'a'); addTransition(q2, q3, 'b');
+          addTransition(q3, q1, 'a'); addTransition(q3, q3, 'b');
+        }
+      },
+      {
+        name: 'Divisible by 3 (unary)',
+        alphabet: 'a',
+        input: 'aaaaaa',
+        build() {
+          const [q0, q1, q2] = _circle(3);
+          startState = q0;
+          acceptStates.add(q0);
+          addTransition(q0, q1, 'a');
+          addTransition(q1, q2, 'a');
+          addTransition(q2, q0, 'a');
+        }
+      },
+      {
+        name: 'Starts and ends with "a"',
+        alphabet: 'a,b',
+        input: 'abba',
+        build() {
+          const [q0, q1, q2, q3] = _row(4);
+          startState = q0;
+          acceptStates.add(q2);
+          // q0=start, q1=saw first a, q2=accept (last was a), q3=dead
+          addTransition(q0, q1, 'a'); addTransition(q0, q3, 'b');
+          addTransition(q1, q2, 'a'); addTransition(q1, q1, 'b');
+          addTransition(q2, q2, 'a'); addTransition(q2, q1, 'b');
+          addTransition(q3, q3, 'a'); addTransition(q3, q3, 'b');
+        }
+      },
+      {
+        name: 'No two consecutive b\'s',
+        alphabet: 'a,b',
+        input: 'ababab',
+        build() {
+          const [q0, q1, q2] = _row(3);
+          startState = q0;
+          acceptStates.add(q0); acceptStates.add(q1);
+          addTransition(q0, q1, 'b'); addTransition(q0, q0, 'a');
+          addTransition(q1, q2, 'b'); addTransition(q1, q0, 'a');
+          addTransition(q2, q2, 'a'); addTransition(q2, q2, 'b');
+        }
+      },
+    ];
 
-      addTransition(q0, q1, 'a');
-      addTransition(q0, q0, 'b');
-      addTransition(q1, q1, 'a');
-      addTransition(q1, q2, 'b');
-      addTransition(q2, q1, 'a');
-      addTransition(q2, q0, 'b');
+    /* ── NFA examples ── */
+    const NFA_EXAMPLES = [
+      {
+        name: 'Ends with "ab"',
+        alphabet: 'a,b',
+        input: 'aabab',
+        build() {
+          const [q0, q1, q2] = _row(3);
+          startState = q0;
+          acceptStates.add(q2);
+          addTransition(q0, q0, 'a'); addTransition(q0, q0, 'b');
+          addTransition(q0, q1, 'a');
+          addTransition(q1, q2, 'b');
+        }
+      },
+      {
+        name: 'Contains "aa"',
+        alphabet: 'a,b',
+        input: 'abaa',
+        build() {
+          const [q0, q1, q2] = _row(3);
+          startState = q0;
+          acceptStates.add(q2);
+          addTransition(q0, q0, 'a'); addTransition(q0, q0, 'b');
+          addTransition(q0, q1, 'a');
+          addTransition(q1, q2, 'a');
+          addTransition(q2, q2, 'a'); addTransition(q2, q2, 'b');
+        }
+      },
+      {
+        name: 'ε-NFA: (a|ε)b*',
+        alphabet: 'a,b',
+        input: 'bbb',
+        build() {
+          const [q0, q1, q2] = _row(3);
+          startState = q0;
+          acceptStates.add(q2);
+          addTransition(q0, q1, EPSILON); addTransition(q0, q1, 'a');
+          addTransition(q1, q1, 'b');     addTransition(q1, q2, EPSILON);
+        }
+      },
+      {
+        name: 'Ends with "b" or starts with "a"',
+        alphabet: 'a,b',
+        input: 'ba',
+        build() {
+          const cx = canvas.width / 2, cy = canvas.height / 2;
+          const gap = 160;
+          // q0=start, q1=branch for "starts with a", q2=accept(start-a), q3=branch end-b, q4=accept(end-b)
+          const q0 = addState(cx - gap * 1.5, cy);
+          const q1 = addState(cx - gap * 0.5, cy - 90);
+          const q2 = addState(cx + gap * 0.5, cy - 90);
+          const q3 = addState(cx - gap * 0.5, cy + 90);
+          const q4 = addState(cx + gap * 0.5, cy + 90);
+          startState = q0;
+          acceptStates.add(q2); acceptStates.add(q4);
+          addTransition(q0, q1, 'a'); addTransition(q1, q2, 'a');
+          addTransition(q1, q2, 'b'); addTransition(q2, q2, 'a');
+          addTransition(q2, q2, 'b');
+          addTransition(q0, q3, 'a'); addTransition(q0, q3, 'b');
+          addTransition(q3, q3, 'a'); addTransition(q3, q4, 'b');
+          addTransition(q4, q3, 'a'); addTransition(q4, q4, 'b');
+        }
+      },
+      {
+        name: 'Even # of a\'s (ε-NFA)',
+        alphabet: 'a,b',
+        input: 'aabba',
+        build() {
+          const [q0, q1] = _row(2);
+          startState = q0;
+          acceptStates.add(q0);
+          addTransition(q0, q1, 'a'); addTransition(q0, q0, 'b');
+          addTransition(q1, q0, 'a'); addTransition(q1, q1, 'b');
+        }
+      },
+      {
+        name: 'Multiple accept paths',
+        alphabet: 'a,b',
+        input: 'ab',
+        build() {
+          const [q0, q1, q2, q3] = _circle(4);
+          startState = q0;
+          acceptStates.add(q2); acceptStates.add(q3);
+          addTransition(q0, q1, 'a'); addTransition(q0, q3, 'b');
+          addTransition(q1, q2, 'b'); addTransition(q1, q1, 'a');
+          addTransition(q2, q2, 'a'); addTransition(q2, q2, 'b');
+          addTransition(q3, q3, 'b');
+        }
+      },
+    ];
 
-      document.getElementById('inputString').value = 'aab';
+    function _updateExampleBtnLabel() {
+      const label = document.getElementById('loadExampleLabel');
+      if (!label) return;
+      const examples = currentMode === 'DFA' ? DFA_EXAMPLES : NFA_EXAMPLES;
+      const ex = examples[_exampleIndex % examples.length];
+      label.textContent = ex.name;
+    }
+
+    function loadExample() {
+      const examples = currentMode === 'DFA' ? DFA_EXAMPLES : NFA_EXAMPLES;
+      const ex = examples[_exampleIndex % examples.length];
+      _exampleIndex++;
+
+      clearAll();
+
+      // Set alphabet before building so updateAlphabet reflects it
+      document.getElementById('alphabetInput').value = ex.alphabet;
+      updateAlphabet();
+
+      // Build states + transitions (positions are set inside build())
+      ex.build();
+
+      document.getElementById('inputString').value = ex.input;
       updateInputDisplay();
       render();
+
+      // Update button to show name of NEXT example
+      _updateExampleBtnLabel();
     }
 
     function clearAll() {
@@ -3581,6 +3794,7 @@ q1, b, q2</textarea>
       render();
       updateInputDisplay();
       updateInstructions();
+      _updateExampleBtnLabel();
 
       console.log('DFA vs NFA Visual Simulator v2.0 — all bugs fixed');
     }
