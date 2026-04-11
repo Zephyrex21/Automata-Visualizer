@@ -2624,6 +2624,7 @@ q1, b, q2</textarea>
     function addTransition(fromId, toId, symbol) {
       const existing = transitions.find(t => t.from === fromId && t.to === toId && t.symbol === symbol);
       if (!existing) {
+        saveToUndo();
         transitions.push({ from: fromId, to: toId, symbol });
         render();
       }
@@ -2862,9 +2863,10 @@ q1, b, q2</textarea>
         simulationState.processedInput = '';
       }
 
-      // FIX: Reset isRunning when back at step 0
+      // FIX: Do NOT set isRunning=false at step 0 — doing so causes nextStep() to restart
+      // simulation from scratch instead of advancing from the initial state.
+      // Only update status display.
       if (simulationState.currentStep === 0) {
-        simulationState.isRunning = false;
         showStatus('Ready', 'running');
       } else {
         showStatus('Running...', 'running');
@@ -3172,6 +3174,11 @@ q1, b, q2</textarea>
       const queue = [initial];
       let dfaCounter = 0;
 
+      // Dead/trap state key and id
+      const DEAD_KEY = '∅';
+      let deadStateAdded = false;
+      let deadStateId = null;
+
       dfaStatesMap.set(initialKey, { nfaStates: initial, dfaId: 'q' + dfaCounter++ });
 
       while (queue.length) {
@@ -3182,7 +3189,17 @@ q1, b, q2</textarea>
         for (const sym of dfaAlphabet) {
           const moved  = nfaMove(current, sym);
           const closed = nfaEpsilonClosure(moved);
-          if (closed.size === 0) continue; // skip dead states for simplicity
+
+          if (closed.size === 0) {
+            // Add dead/trap state on first encounter
+            if (!deadStateAdded) {
+              deadStateId = 'q' + dfaCounter++;
+              dfaStatesMap.set(DEAD_KEY, { nfaStates: new Set(), dfaId: deadStateId });
+              deadStateAdded = true;
+            }
+            dfaTransitions.push({ from: currentId, to: deadStateId, symbol: sym });
+            continue;
+          }
 
           const closedKey = [...closed].sort().join(',');
           if (!dfaStatesMap.has(closedKey)) {
@@ -3190,6 +3207,13 @@ q1, b, q2</textarea>
             queue.push(closed);
           }
           dfaTransitions.push({ from: currentId, to: dfaStatesMap.get(closedKey).dfaId, symbol: sym });
+        }
+      }
+
+      // Add self-loops on all symbols from dead state
+      if (deadStateAdded) {
+        for (const sym of dfaAlphabet) {
+          dfaTransitions.push({ from: deadStateId, to: deadStateId, symbol: sym });
         }
       }
 
@@ -3265,9 +3289,12 @@ q1, b, q2</textarea>
             startState   = data.startState   || null;
             acceptStates = new Set(data.acceptStates || []);
             alphabet     = data.alphabet     || ['a', 'b'];
-            // Recompute counter from loaded IDs
+            // Recompute counter from loaded IDs — handles both q0/q1 and A/B/C letter labels
             stateCounter = states.length
-              ? Math.max(...states.map(s => parseInt(s.id.replace('q', '')) || 0)) + 1
+              ? Math.max(...states.map(s => {
+                  const m = s.id.match(/(\d+)$/);
+                  return m ? parseInt(m[1]) : 0;
+                })) + 1
               : 0;
             document.getElementById('alphabetInput').value = alphabet.join(',');
             if (data.mode) setMode(data.mode);
@@ -3881,7 +3908,24 @@ q1, b, q2</textarea>
 
       let sX, sY, eX, eY, cX, cY;
       if (isSelf) {
-        const ang = -Math.PI / 4, sp = 0.55;
+        // Pick self-loop angle based on state position to avoid clipping at canvas edges
+        const canvasEl = ctx.canvas;
+        const margin = 70;
+        const nearTop    = fromSt.y < margin;
+        const nearBottom = canvasEl && fromSt.y > canvasEl.height - margin;
+        const nearLeft   = fromSt.x < margin;
+        const nearRight  = canvasEl && fromSt.x > canvasEl.width  - margin;
+        let ang;
+        if      (nearTop    && nearLeft)  ang =  Math.PI / 4;
+        else if (nearTop    && nearRight) ang =  (3*Math.PI) / 4;
+        else if (nearBottom && nearLeft)  ang = -Math.PI / 4;
+        else if (nearBottom && nearRight) ang = -(3*Math.PI) / 4;
+        else if (nearTop)    ang =  Math.PI / 2;
+        else if (nearBottom) ang = -Math.PI / 2;
+        else if (nearLeft)   ang =  0;
+        else if (nearRight)  ang =  Math.PI;
+        else                 ang = -Math.PI / 4;
+        const sp = 0.55;
         sX = fromSt.x + CONV_R*Math.cos(ang-sp); sY = fromSt.y + CONV_R*Math.sin(ang-sp);
         eX = fromSt.x + CONV_R*Math.cos(ang+sp); eY = fromSt.y + CONV_R*Math.sin(ang+sp);
         cX = fromSt.x + (CONV_R+60)*Math.cos(ang); cY = fromSt.y + (CONV_R+60)*Math.sin(ang);
@@ -3997,7 +4041,13 @@ q1, b, q2</textarea>
 
       for (const st of stateObjs) {
         const isStart  = st.label === conv.dfaStartLabel;
-        const isAccept = conv.dfaAccept.has(st.label);
+        // Derive accept from the step snapshot — not global conv.dfaAccept (which is set ahead of time)
+        const snapEntry = dfaMapSnap.get([...dfaMapSnap.keys()].find(k => {
+          const e = dfaMapSnap.get(k); return e && e.label === st.label;
+        }));
+        const isAccept = snapEntry
+          ? [...snapEntry.nfaStates].some(s => conv.nfaAccept.has(s))
+          : false;
         let hl = 'normal';
         if (step.phase==='done' && isAccept) hl = 'done-accept';
         else if (st.label===newState)        hl = 'new';
@@ -4081,7 +4131,8 @@ q1, b, q2</textarea>
       }
       let html = '';
       for (const [,entry] of step.dfaMapSnap) {
-        const isAcc  = conv.dfaAccept.has(entry.label);
+        // Derive accept from snapshot NFA states — not global conv.dfaAccept (set ahead of time)
+        const isAcc  = [...entry.nfaStates].some(s => conv.nfaAccept.has(s));
         const isNew  = step.newDfaState===entry.label;
         const isHigh = step.dfaHighlight&&step.dfaHighlight.has(entry.label);
         let cls = 'dfa-chip-normal';
@@ -4112,10 +4163,10 @@ q1, b, q2</textarea>
       const hiSym   = step.newTransition?.symbol;
 
       let body = '';
-      let isFirst = true;
       for (const [,entry] of step.dfaMapSnap) {
         const lbl     = entry.label;
-        const isAcc   = conv.dfaAccept.has(lbl);
+        // Derive accept from snapshot NFA states — not global conv.dfaAccept
+        const isAcc   = [...entry.nfaStates].some(s => conv.nfaAccept.has(s));
         const isStart = lbl === conv.dfaStartLabel;
         const marker  = (isStart?'→':'') + (isAcc?'*':'');
         body += `<tr class="${step.newDfaState===lbl?'table-row-new':''}">`;
@@ -4129,7 +4180,6 @@ q1, b, q2</textarea>
             : `<td class="dfa-table-cell-empty">—</td>`;
         });
         body += '</tr>';
-        isFirst = false;
       }
       tbody.innerHTML = body || '<tr><td colspan="99" class="text-center" style="color:var(--text-tertiary);padding:20px;">No states yet</td></tr>';
     }
@@ -4296,11 +4346,15 @@ q1, b, q2</textarea>
           {id:'q0',label:'q0'},{id:'q1',label:'q1'},
           {id:'q2',label:'q2'},{id:'q3',label:'q3'},
         ];
+        // q0=start, q1 counts odd a's, q2/q3 are ε-split paths looping on b
+        // ε-NFA: q0 --ε--> q2 (even path, accept), q0 --ε--> q1 (odd path)
+        // q1 --a--> q0 (toggle back to even), q1 --b--> q1
+        // q2 --a--> q3, q2 --b--> q2, q3 --a--> q2, q3 --b--> q3
         conv.nfaTransitions=[
           {from:'q0',to:'q1',symbol:'ε'},{from:'q0',to:'q2',symbol:'ε'},
-          {from:'q1',to:'q3',symbol:'a'},{from:'q1',to:'q1',symbol:'b'},
-          {from:'q2',to:'q2',symbol:'b'},{from:'q3',to:'q3',symbol:'a'},
-          {from:'q3',to:'q3',symbol:'b'},{from:'q3',to:'q0',symbol:'ε'},
+          {from:'q1',to:'q0',symbol:'a'},{from:'q1',to:'q1',symbol:'b'},
+          {from:'q2',to:'q3',symbol:'a'},{from:'q2',to:'q2',symbol:'b'},
+          {from:'q3',to:'q2',symbol:'a'},{from:'q3',to:'q3',symbol:'b'},
         ];
         conv.nfaStart='q0'; conv.nfaAccept=new Set(['q0','q2']);
       }
@@ -4382,6 +4436,9 @@ q1, b, q2</textarea>
     function convLoadFromSimulator() {
       if (typeof states==='undefined'||states.length===0) {
         convToast('The Simulator has no states. Build an NFA there first (switch to NFA mode).','warn'); return;
+      }
+      if (typeof currentMode !== 'undefined' && currentMode !== 'NFA') {
+        convToast('The Simulator is in DFA mode. Switch to NFA mode before loading.','error'); return;
       }
       conv.nfaStates      = states.map(s=>({id:s.id, label:s.label}));
       conv.nfaTransitions = transitions.map(t=>({from:t.from, to:t.to, symbol:t.symbol}));
@@ -4519,6 +4576,7 @@ q1, b, q2</textarea>
     if (!CanvasRenderingContext2D.prototype.roundRect) {
       CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
         if (w<2*r) r=w/2; if (h<2*r) r=h/2;
+        this.beginPath();
         this.moveTo(x+r,y);
         this.arcTo(x+w,y, x+w,y+h, r);
         this.arcTo(x+w,y+h, x,y+h, r);
