@@ -163,15 +163,10 @@
     .btn-icon:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
     .btn-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-    .card {
-      background: var(--bg-secondary);
-      border-radius: 20px;
-      padding: 28px;
-      box-shadow: var(--shadow-md);
-      border: 1px solid var(--border);
-      transition: all 0.3s ease;
-    }
+    .card { background: var(--bg-secondary); border-radius: 20px; padding: 28px; box-shadow: var(--shadow-md); border: 1px solid var(--border); transition: all 0.3s ease; }
     .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); }
+    /* Cards that grow to fill height should not lift on hover */
+    .card[style*="flex:1"]:hover { transform: none; box-shadow: var(--shadow-md); }
 
     .input-field {
       background: var(--bg-tertiary);
@@ -1186,9 +1181,9 @@
         </div>
       </div>
 
-      <div class="grid lg:grid-cols-4 gap-6">
-        <!-- Tools Panel -->
-        <div class="lg:col-span-1 space-y-4">
+      <div class="grid lg:grid-cols-4 gap-6" style="align-items:stretch;">
+        <!-- Tools Panel — flex column so Actions card grows to fill space -->
+        <div class="lg:col-span-1 flex flex-col gap-4">
           <div class="card p-4">
             <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Tools</h3>
             <div class="grid grid-cols-3 lg:grid-cols-2 gap-2">
@@ -1236,12 +1231,12 @@
 
           <div class="card p-4">
             <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Alphabet</h3>
-            <!-- FIX: oninput instead of onchange so it fires while typing -->
             <input type="text" id="alphabetInput" class="input-field text-center text-lg" placeholder="a,b,c" value="a,b" oninput="updateAlphabet()">
             <p class="text-xs mt-2" style="color: var(--text-tertiary);">Comma-separated symbols (no ε)</p>
           </div>
 
-          <div class="card p-4">
+          <!-- Actions card grows to fill remaining height in this column -->
+          <div class="card p-4" style="flex:1;">
             <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Actions</h3>
             <div class="space-y-2">
               <button class="btn-secondary w-full text-sm" onclick="undoAction()">↩ Undo (Ctrl+Z)</button>
@@ -1268,9 +1263,7 @@
               animation: nfaBannerIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
             ">
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <!-- Left: icon + text + live stats chips -->
                 <div class="flex items-center gap-3 min-w-0">
-                  <!-- Animated pulse icon -->
                   <div style="
                     width:38px;height:38px;border-radius:10px;flex-shrink:0;
                     background:linear-gradient(135deg,var(--accent),#34c759);
@@ -1293,21 +1286,11 @@
                     </div>
                   </div>
                 </div>
-                <!-- Right: CTA button -->
                 <button onclick="convFromSimulatorAndGo()" style="
-                  background:var(--accent);
-                  color:white;
-                  border:none;
-                  border-radius:10px;
-                  padding:10px 20px;
-                  font-size:14px;
-                  font-weight:700;
-                  cursor:pointer;
-                  display:flex;align-items:center;gap:8px;
-                  flex-shrink:0;
-                  transition:all 0.2s ease;
-                  box-shadow:0 4px 14px rgba(0,113,227,0.35);
-                "
+                  background:var(--accent);color:white;border:none;border-radius:10px;
+                  padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;
+                  display:flex;align-items:center;gap:8px;flex-shrink:0;
+                  transition:all 0.2s ease;box-shadow:0 4px 14px rgba(0,113,227,0.35);"
                 onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,113,227,0.45)';"
                 onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(0,113,227,0.35)';">
                   Convert to DFA
@@ -1379,8 +1362,8 @@
           </div>
         </div>
 
-        <!-- Info Panel -->
-        <div class="lg:col-span-1 space-y-4">
+        <!-- Info Panel — flex column so Instructions card grows to fill space -->
+        <div class="lg:col-span-1 flex flex-col gap-4">
           <div class="card p-4">
             <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Transition Table</h3>
             <div class="overflow-x-auto max-h-64 overflow-y-auto">
@@ -1416,14 +1399,14 @@
                 <span style="color: var(--text-secondary);">Accept States</span>
                 <span class="font-mono font-semibold" id="statAccept">-</span>
               </div>
-              <!-- DFA validity warning -->
               <div id="dfaWarning" class="dfa-warning" style="display:none;">
                 ⚠ Incomplete DFA — missing transitions
               </div>
             </div>
           </div>
 
-          <div class="card p-4">
+          <!-- Instructions card grows to fill remaining height in this column -->
+          <div class="card p-4" style="flex:1;">
             <h3 class="font-semibold mb-4 text-sm uppercase tracking-wide" style="color: var(--text-tertiary);">Instructions</h3>
             <ul class="space-y-2 text-sm" style="color: var(--text-secondary);" id="instructionsList">
               <li class="flex items-start gap-2"><span style="color: var(--accent);">1.</span>Select "State" tool and click canvas to add states</li>
@@ -1431,7 +1414,6 @@
               <li class="flex items-start gap-2"><span style="color: var(--accent);">3.</span>Mark start and accepting states</li>
               <li class="flex items-start gap-2"><span style="color: var(--accent);">4.</span>Enter input string and run simulation</li>
             </ul>
-            <!-- Transition in-progress hint -->
             <div id="transitionHint" class="transition-pending-hint"></div>
           </div>
         </div>
