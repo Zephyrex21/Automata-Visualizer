@@ -2,6 +2,8 @@
 
 An interactive web-based **Automata Lab** that allows users to design, visualize, and simulate computational models like **NFA, DFA**, and more.
 
+Link:- https://automata-lab.netlify.app/
+
 ---
 
 ## Project Overview
@@ -72,12 +74,6 @@ This project solves that by creating a **virtual Automata Lab**, helping student
 
 3. Open in browser:
    Open index.html
-
----
-
-## Demo
-
-Link:- https://automata-lab.netlify.app/
 
 ---
 
