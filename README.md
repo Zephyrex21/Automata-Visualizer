@@ -1,10 +1,10 @@
-# 🧠 Automata Visualizer
+# Automata Visualizer
 
 An interactive web-based **Automata Lab** that allows users to design, visualize, and simulate computational models like **NFA, DFA**, and more.
 
 ---
 
-## 🎯 Project Overview
+## Project Overview
 
 Automata Visualizer is a modern web application built to simplify the understanding of **Theory of Automata and Formal Languages (TAFL)**.
 
@@ -19,26 +19,26 @@ The goal is to transform traditional theoretical learning into an **interactive 
 
 ---
 
-## ✨ Features
+## Features
 
 ### 🔹 Core Features
 
-* ✅ NFA Creation and Visualization
-* ✅ DFA Creation and Simulation
-* ✅ NFA → DFA Conversion
-* ✅ Step-by-step string evaluation
-* ✅ Graph-based visualization of states and transitions
+* NFA Creation and Visualization
+* DFA Creation and Simulation
+* NFA → DFA Conversion
+* Step-by-step string evaluation
+* Graph-based visualization of states and transitions
 
 ### 🔹 UI/UX Features
 
-* 🎨 Modern UI design
-* ⚡ Smooth animations
-* 📊 Interactive graph rendering
-* 🌗 Light/Dark mode (future scope)
+* Modern UI design
+* Smooth animations
+* Interactive graph rendering
+* Light/Dark mode (future scope)
 
 ---
 
-## 🧪 Why This Project?
+## Why This Project?
 
 Traditional automata learning is:
 
@@ -54,7 +54,7 @@ This project solves that by creating a **virtual Automata Lab**, helping student
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Frontend:** HTML, CSS, JavaScript
 * **Visualization:** Graph-based rendering (e.g., Cytoscape.js or custom logic)
@@ -62,7 +62,7 @@ This project solves that by creating a **virtual Automata Lab**, helping student
 
 ---
 
-## ⚙️ How to Run
+## How to Run
 
 1. Clone the repository:
    git clone https://github.com/Zephyrex21/Automata-Visualizer.git
@@ -75,23 +75,23 @@ This project solves that by creating a **virtual Automata Lab**, helping student
 
 ---
 
-## 📸 Demo
+## Demo
 
-👉 https://automata-lab.netlify.app/
-
----
-
-## 🚧 Future Scope
-
-* 🔜 Regex → NFA Conversion
-* 🔜 Pushdown Automata (PDA)
-* 🔜 Turing Machine Simulator
-* 🔜 Pre-built examples for demo
-* 🔜 Export / Save automata
+Link:- https://automata-lab.netlify.app/
 
 ---
 
-## 🎓 Academic Relevance
+## Future Scope
+
+* Regex → NFA Conversion
+* Pushdown Automata (PDA)
+* Turing Machine Simulator
+* Pre-built examples for demo
+* Export / Save automata
+
+---
+
+## Academic Relevance
 
 This project is designed for **TAFL Lab** to demonstrate:
 
@@ -101,32 +101,19 @@ This project is designed for **TAFL Lab** to demonstrate:
 
 ---
 
-## 🤝 Contribution
-
-Contributions are welcome!
-
-Steps:
-
-1. Fork the repository
-2. Create a new branch
-3. Make changes
-4. Submit a Pull Request
-
----
-
-## 📜 License
+## License
 
 This project is open-source and available under the **MIT License**.
 
 ---
 
-## 💡 Author
+## Author
 
 **Saurabh Raj Shekhar (Zephyrex)**
 🚀 Passionate about building interactive learning tools
 
 ---
 
-## ⭐ Support
+## Support
 
 If you like this project, consider giving it a **star ⭐** on GitHub!
