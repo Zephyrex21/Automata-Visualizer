@@ -505,6 +505,7 @@
     .dfa-chip-accept  { background: rgba(52,199,89,0.15); color: #34c759; border-color: rgba(52,199,89,0.3); }
     .dfa-chip-new     { background: rgba(175,82,222,0.15); color: #af52de; border-color: rgba(175,82,222,0.3); }
     .dfa-chip-active  { background: rgba(255,149,0,0.15); color: #ff9500; border-color: rgba(255,149,0,0.3); }
+    .dfa-chip-dead    { background: rgba(255,59,48,0.10); color: var(--text-tertiary); border-color: rgba(255,59,48,0.2); }
 
     /* NFA state chips (smaller) */
     .nfa-state-chip {
@@ -4244,7 +4245,7 @@ q1, b, q2</textarea>
             title:        `move({ ${[...current].join(', ')} }, "${sym}") = { ${moved.size ? [...moved].join(', ') : '∅'} }`,
             explanation:  moved.size
               ? `From DFA state "<strong>${curEntry.label}</strong>" ({${[...current].join(', ')}}), on input "<strong>${sym}</strong>", we follow all NFA transitions labeled "${sym}". Each highlighted orange state is a source, and the arrows lead to the reachable set.`
-              : `From DFA state "<strong>${curEntry.label}</strong>", no NFA state in {${[...current].join(', ')}} has a "${sym}"-transition. The result is <strong>∅</strong> (dead — no DFA transition on "${sym}" from ${curEntry.label}).`,
+              : `From DFA state "<strong>${curEntry.label}</strong>", no NFA state in {${[...current].join(', ')}} has a "${sym}"-transition. The move result is <strong>∅</strong>. A complete DFA requires a transition on every symbol, so we route this to the <strong>dead/trap state ∅</strong>.`,
             nfaHighlight: current,
             nfaMoveDest:  moved,
             dfaHighlight: new Set([curEntry.label]),
@@ -4253,7 +4254,45 @@ q1, b, q2</textarea>
             ...snap(),
           });
 
-          if (moved.size === 0) continue;
+          if (moved.size === 0) {
+            // ── DEAD/TRAP STATE: create ∅ state if not yet in map ──
+            const DEAD = '∅';
+            if (!dfaMap.has(DEAD)) {
+              dfaMap.set(DEAD, { label: DEAD, nfaStates: new Set() });
+              // ∅ is never an accept state; it will NOT be added to worklist
+              // (its self-loops are added after the worklist finishes)
+              steps.push({
+                phase:        'new_state',
+                title:        `New DFA dead/trap state "∅" created`,
+                explanation:  `The set ∅ is new. We create the <strong>dead/trap state ∅</strong> = {} and add it to the DFA. It is <em>not</em> an accept state. Any state that has no transition on a symbol will be routed here. ∅ will loop back to itself on every symbol.`,
+                nfaHighlight: new Set(),
+                dfaHighlight: new Set([DEAD]),
+                newDfaState:  DEAD,
+                newDfaIsAcc:  false,
+                activeTrans:  [],
+                mapping:      '∅ = {} (trap/dead state)',
+                ...snap(),
+              });
+            }
+            // Record DFA transition to dead state
+            const dupDead = dfaTrans.some(t => t.from === curEntry.label && t.symbol === sym);
+            if (!dupDead) {
+              dfaTrans.push({ from: curEntry.label, to: DEAD, symbol: sym });
+            }
+            steps.push({
+              phase:        'transition',
+              title:        `δ(${curEntry.label}, "${sym}") = ∅  [dead state]`,
+              explanation:  `DFA transition recorded: from "<strong>${curEntry.label}</strong>" on "<strong>${sym}</strong>" → dead state <strong>∅</strong>. This ensures the DFA has a total transition function.`,
+              nfaHighlight: current,
+              nfaMoveDest:  new Set(),
+              dfaHighlight: new Set([curEntry.label, DEAD]),
+              newTransition: { from: curEntry.label, to: DEAD, symbol: sym },
+              activeTrans:  [],
+              mapping:      '',
+              ...snap(),
+            });
+            continue;
+          }
 
           // ── ε-CLOSURE step ──
           const closed  = convEpsClosure(moved);
@@ -4299,7 +4338,9 @@ q1, b, q2</textarea>
 
           // ── ADD DFA TRANSITION ──
           const toEntry = dfaMap.get(closedKey);
-          dfaTrans.push({ from: curEntry.label, to: toEntry.label, symbol: sym });
+          // Guard against duplicates (safety — each (from,sym) should only be processed once)
+          const isDup = dfaTrans.some(t => t.from === curEntry.label && t.symbol === sym);
+          if (!isDup) dfaTrans.push({ from: curEntry.label, to: toEntry.label, symbol: sym });
           steps.push({
             phase:        'transition',
             title:        `δ(${curEntry.label}, "${sym}") = ${toEntry.label}`,
@@ -4309,6 +4350,33 @@ q1, b, q2</textarea>
             newTransition: { from: curEntry.label, to: toEntry.label, symbol: sym },
             activeTrans:  [],
             mapping:      '',
+            ...snap(),
+          });
+        }
+      }
+
+      // ── DEAD STATE self-loops (add after worklist so all transitions are in dfaTrans) ──
+      const DEAD_LABEL = '∅';
+      if (dfaMap.has(DEAD_LABEL)) {
+        let addedSelfLoops = false;
+        for (const sym of alpha) {
+          const alreadyHas = dfaTrans.some(t => t.from === DEAD_LABEL && t.to === DEAD_LABEL && t.symbol === sym);
+          if (!alreadyHas) {
+            dfaTrans.push({ from: DEAD_LABEL, to: DEAD_LABEL, symbol: sym });
+            addedSelfLoops = true;
+          }
+        }
+        if (addedSelfLoops) {
+          steps.push({
+            phase:        'transition',
+            title:        `Dead state ∅ self-loops on all symbols: { ${alpha.join(', ')} }`,
+            explanation:  `The <strong>dead/trap state ∅</strong> must have transitions on every symbol. Since it represents "no NFA states active", moving on any symbol stays in ∅. These <strong>self-loops</strong> make the DFA complete (total transition function).`,
+            nfaHighlight: new Set(),
+            nfaMoveDest:  new Set(),
+            dfaHighlight: new Set([DEAD_LABEL]),
+            newTransition: { from: DEAD_LABEL, to: DEAD_LABEL, symbol: alpha.join(',') },
+            activeTrans:  [],
+            mapping:      '∅ = {} (trap state — all symbols loop back)',
             ...snap(),
           });
         }
@@ -4362,20 +4430,30 @@ q1, b, q2</textarea>
       const textCol  = convCC('--text-primary') || '#1d1d1f';
       const warnCol  = '#ff9500';
       const purpCol  = '#af52de';
+      const deadCol  = '#86868b';  // grey for trap/dead state
+
+      const isDead = state.label === '∅';
 
       let fillCol, strokeCol, textFill;
-      switch (highlight) {
-        case 'active':      fillCol = warnCol;  strokeCol = warnCol;  textFill = '#fff'; break;
-        case 'new':         fillCol = purpCol;  strokeCol = purpCol;  textFill = '#fff'; break;
-        case 'result':      fillCol = actCol;   strokeCol = actCol;   textFill = '#fff'; break;
-        case 'done-accept': fillCol = accCol+'50'; strokeCol = accCol; textFill = textCol; break;
-        default:
-          if (isAccept) { fillCol = accCol+'30'; strokeCol = accCol; textFill = textCol; }
-          else          { fillCol = baseCol;     strokeCol = baseCol; textFill = textCol; }
+      if (isDead) {
+        // Dead state always renders as muted grey regardless of highlight
+        fillCol   = highlight === 'active' ? '#636366' : (convCC('--bg-tertiary') || '#f5f5f7');
+        strokeCol = deadCol;
+        textFill  = highlight === 'active' ? '#fff' : deadCol;
+      } else {
+        switch (highlight) {
+          case 'active':      fillCol = warnCol;  strokeCol = warnCol;  textFill = '#fff'; break;
+          case 'new':         fillCol = purpCol;  strokeCol = purpCol;  textFill = '#fff'; break;
+          case 'result':      fillCol = actCol;   strokeCol = actCol;   textFill = '#fff'; break;
+          case 'done-accept': fillCol = accCol+'50'; strokeCol = accCol; textFill = textCol; break;
+          default:
+            if (isAccept) { fillCol = accCol+'30'; strokeCol = accCol; textFill = textCol; }
+            else          { fillCol = baseCol;     strokeCol = baseCol; textFill = textCol; }
+        }
       }
 
-      // glow ring
-      if (highlight && highlight !== 'normal') {
+      // glow ring (skip for dead state unless actively highlighted)
+      if (highlight && highlight !== 'normal' && !(isDead && highlight !== 'active')) {
         ctx.save(); ctx.shadowColor = strokeCol; ctx.shadowBlur = 18;
         ctx.beginPath(); ctx.arc(state.x, state.y, CONV_R+5, 0, Math.PI*2);
         ctx.fillStyle = strokeCol+'28'; ctx.fill(); ctx.restore();
@@ -4383,7 +4461,16 @@ q1, b, q2</textarea>
 
       ctx.beginPath(); ctx.arc(state.x, state.y, CONV_R, 0, Math.PI*2);
       ctx.fillStyle = fillCol; ctx.fill();
-      ctx.strokeStyle = strokeCol; ctx.lineWidth = 2.5; ctx.stroke();
+
+      // Dashed border for dead state, solid for others
+      if (isDead) {
+        ctx.save();
+        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = strokeCol; ctx.lineWidth = 2; ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.strokeStyle = strokeCol; ctx.lineWidth = 2.5; ctx.stroke();
+      }
 
       if (isAccept) {
         ctx.beginPath(); ctx.arc(state.x, state.y, CONV_IR, 0, Math.PI*2);
@@ -4392,7 +4479,7 @@ q1, b, q2</textarea>
       }
 
       ctx.fillStyle = textFill;
-      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.font = isDead ? 'bold 13px Inter, sans-serif' : 'bold 12px Inter, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(state.label, state.x, state.y);
 
@@ -4629,13 +4716,20 @@ q1, b, q2</textarea>
       }
       let html = '';
       for (const [,entry] of step.dfaMapSnap) {
+        const isDead = entry.label === '∅';
         const isAcc  = conv.dfaAccept.has(entry.label);
         const isNew  = step.newDfaState===entry.label;
         const isHigh = step.dfaHighlight&&step.dfaHighlight.has(entry.label);
         let cls = 'dfa-chip-normal';
-        if (isNew) cls='dfa-chip-new'; else if (isAcc) cls='dfa-chip-accept'; else if (isHigh) cls='dfa-chip-active';
-        const nfaList = [...entry.nfaStates].map(s=>`<span class="nfa-state-chip">${s}</span>`).join('');
-        html += `<div class="dfa-state-chip ${cls}"><strong>${entry.label}</strong>&nbsp;=&nbsp;{&thinsp;${nfaList}&thinsp;}${isAcc?' <span style="color:#34c759;font-size:14px;">✓</span>':''}</div>`;
+        if (isDead)      cls = 'dfa-chip-dead';
+        else if (isNew)  cls = 'dfa-chip-new';
+        else if (isAcc)  cls = 'dfa-chip-accept';
+        else if (isHigh) cls = 'dfa-chip-active';
+        const nfaList = isDead
+          ? '<span style="color:var(--text-tertiary);font-size:11px;">∅</span>'
+          : [...entry.nfaStates].map(s=>`<span class="nfa-state-chip">${s}</span>`).join('');
+        const deadBadge = isDead ? ' <span style="font-size:10px;opacity:0.7;">trap</span>' : '';
+        html += `<div class="dfa-state-chip ${cls}"><strong>${entry.label}</strong>&nbsp;=&nbsp;{&thinsp;${nfaList}&thinsp;}${deadBadge}${isAcc?' <span style="color:#34c759;font-size:14px;">✓</span>':''}</div>`;
       }
       container.innerHTML = html;
     }
@@ -4653,6 +4747,7 @@ q1, b, q2</textarea>
       const byState = {};
       for (const t of step.dfaTransSnap) {
         if (!byState[t.from]) byState[t.from]={};
+        // last write wins — duplicates safely overwritten
         byState[t.from][t.symbol] = t.to;
       }
 
@@ -4662,17 +4757,20 @@ q1, b, q2</textarea>
       let body = '';
       for (const [,entry] of step.dfaMapSnap) {
         const lbl     = entry.label;
+        const isDead  = lbl === '∅';
         const isAcc   = conv.dfaAccept.has(lbl);
         const isStart = lbl === conv.dfaStartLabel;
         const marker  = (isStart?'→':'') + (isAcc?'*':'');
-        body += `<tr class="${step.newDfaState===lbl?'table-row-new':''}">`;
-        body += `<td style="font-weight:700;">${marker?marker+' ':''}${lbl}</td>`;
-        body += `<td style="color:var(--text-tertiary);font-size:11px;">{${[...entry.nfaStates].join(', ')}}</td>`;
+        const subsetTxt = isDead ? '{}' : `{${[...entry.nfaStates].join(', ')}}`;
+        body += `<tr class="${step.newDfaState===lbl?'table-row-new':''}${isDead?' style="opacity:0.65;"':''}">`;
+        body += `<td style="font-weight:700;${isDead?'color:var(--error);':''}">${marker?marker+' ':''}${lbl}${isDead?' <span style="font-size:10px;color:var(--text-tertiary);">(trap)</span>':''}</td>`;
+        body += `<td style="color:var(--text-tertiary);font-size:11px;">${subsetTxt}</td>`;
         alpha.forEach(sym => {
           const tgt  = byState[lbl]?.[sym];
           const hiC  = hiState===lbl && hiSym===sym;
+          const cellDead = tgt === '∅';
           body += tgt
-            ? `<td class="${hiC?'dfa-table-cell-new':''}" style="font-weight:600;">${tgt}</td>`
+            ? `<td class="${hiC?'dfa-table-cell-new':''}" style="font-weight:600;${cellDead?'color:var(--text-tertiary);':''}">${tgt}</td>`
             : `<td class="dfa-table-cell-empty">—</td>`;
         });
         body += '</tr>';
@@ -4686,13 +4784,13 @@ q1, b, q2</textarea>
       card.style.display='block';
       const nfa=conv.nfaStates.length, dfa=conv.dfaStatesMap.size, trans=conv.dfaAllTrans.length;
       const worst=Math.pow(2,nfa), acc=[...conv.dfaAccept].join(', ')||'none';
-      // Compact inline stat chips
+      const hasDead = conv.dfaStatesMap.has('∅');
       document.getElementById('convSummaryBody').innerHTML = `
         <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:var(--accent-light);color:var(--accent);border-radius:20px;font-size:12px;font-weight:700;">
           <span style="font-size:16px;">${nfa}</span> NFA states
         </span>
         <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(52,199,89,0.12);color:#34c759;border-radius:20px;font-size:12px;font-weight:700;">
-          <span style="font-size:16px;">${dfa}</span> DFA states
+          <span style="font-size:16px;">${dfa}</span> DFA states${hasDead?' <span style="font-size:10px;opacity:0.7;">(incl. ∅ trap)</span>':''}
         </span>
         <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(175,82,222,0.12);color:#af52de;border-radius:20px;font-size:12px;font-weight:700;">
           <span style="font-size:16px;">${trans}</span> transitions
@@ -4966,8 +5064,10 @@ q1, b, q2</textarea>
       states=[]; transitions=[]; acceptStates.clear();
       entries.forEach((entry,i) => {
         const ang=(2*Math.PI*i)/n - Math.PI/2;
+        const isDead = entry.label === '∅';
         states.push({id:entry.label, label:entry.label,
-          x: cx+r*Math.cos(ang), y: cy+r*Math.sin(ang)});
+          x: cx+r*Math.cos(ang), y: cy+r*Math.sin(ang),
+          isDead: isDead});
         if (conv.dfaAccept.has(entry.label)) acceptStates.add(entry.label);
       });
       transitions = conv.dfaAllTrans.map(t=>({from:t.from,to:t.to,symbol:t.symbol}));
