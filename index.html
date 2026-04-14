@@ -1226,6 +1226,13 @@
                 </svg>
                 Delete
               </button>
+              <button class="tool-btn" id="toolDeadState" onclick="addDeadState()" style="grid-column:span 2;" title="Add a trap/dead state (∅) — all missing transitions point here in DFA mode">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" stroke-dasharray="4 2"></circle>
+                  <line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line>
+                </svg>
+                + Dead State (∅)
+              </button>
             </div>
           </div>
 
@@ -1338,6 +1345,12 @@
                     <line x1="19" y1="5" x2="19" y2="19"></line>
                   </svg>
                 </button>
+                <button class="btn-icon tooltip" onclick="toggleExecTrace()" data-tooltip="Execution Trace" id="traceBtn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -1358,6 +1371,15 @@
               <div id="currentStateDisplay" class="text-sm font-mono" style="color: var(--text-secondary);">
                 Current: -
               </div>
+            </div>
+
+            <!-- Execution Trace -->
+            <div class="mt-4" id="execTraceContainer" style="display:none;">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-semibold uppercase tracking-wide" style="color:var(--text-tertiary);">Execution Trace</label>
+                <button onclick="document.getElementById('execTraceContainer').style.display='none'" style="font-size:11px;color:var(--text-tertiary);background:none;border:none;cursor:pointer;">✕</button>
+              </div>
+              <div id="execTraceLog" style="max-height:140px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg-tertiary);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;"></div>
             </div>
           </div>
         </div>
@@ -1399,8 +1421,11 @@
                 <span style="color: var(--text-secondary);">Accept States</span>
                 <span class="font-mono font-semibold" id="statAccept">-</span>
               </div>
-              <div id="dfaWarning" class="dfa-warning" style="display:none;">
-                ⚠ Incomplete DFA — missing transitions
+              <div id="dfaWarning" class="dfa-warning" style="display:none; flex-direction:column; gap:6px; align-items:flex-start;">
+                <span>⚠ Incomplete DFA — missing transitions</span>
+                <button onclick="completeDFA()" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;border:1px solid var(--warning);background:rgba(255,159,10,0.12);color:var(--warning);cursor:pointer;">
+                  ✦ Auto-complete with ∅ (dead state)
+                </button>
               </div>
             </div>
           </div>
@@ -2155,6 +2180,19 @@ q1, b, q2</textarea>
     </div>
   </div>
 
+  <!-- Rename State Modal -->
+  <div id="renameModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+    <div class="card max-w-xs w-full p-6 animate-fade-in-up">
+      <h3 class="text-base font-semibold mb-1">Rename State</h3>
+      <p class="text-xs mb-4" style="color: var(--text-secondary);">Enter a new label for this state.</p>
+      <input type="text" id="renameInput" class="input-field mb-4" placeholder="e.g., q0, A, start">
+      <div class="flex gap-3">
+        <button class="btn-secondary flex-1" onclick="closeRenameModal()">Cancel</button>
+        <button class="btn-primary flex-1" onclick="confirmRename()">Rename</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Transition Symbol Modal -->
 
   <div id="symbolModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
@@ -2209,6 +2247,19 @@ q1, b, q2</textarea>
     // Track last touch position for touchend → click
     let lastTouchPos = null;
 
+    // Drag-click guard: prevents click from firing after a drag gesture
+    let _didDrag = false;
+    let _dragStartX = 0, _dragStartY = 0;
+
+    // Undo-flood guard: suppresses saveToUndo() during bulk operations (e.g. loadExample)
+    let _suppressUndo = false;
+
+    // Edge curve map: tracks curveAmount per (from|||to) for consistent hit-detection
+    const _edgeCurveMap = new Map();
+
+    // Execution trace log entries
+    let _execTrace = [];
+
     const canvas = document.getElementById('graphCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -2224,6 +2275,7 @@ q1, b, q2</textarea>
     // ============================================
 
     function saveToUndo() {
+      if (_suppressUndo) return;
       undoStack.push({
         states: JSON.parse(JSON.stringify(states)),
         transitions: JSON.parse(JSON.stringify(transitions)),
@@ -2348,11 +2400,44 @@ q1, b, q2</textarea>
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid();
-      transitions.forEach(t => drawTransition(t));
+
+      // ── Group transitions by (from,to) pair for merged labels ──
+      const edgeGroups = new Map();
+      for (const t of transitions) {
+        const key = t.from + '|||' + t.to;
+        if (!edgeGroups.has(key)) edgeGroups.set(key, { from: t.from, to: t.to, symbols: [] });
+        if (!edgeGroups.get(key).symbols.includes(t.symbol)) edgeGroups.get(key).symbols.push(t.symbol);
+      }
+
+      // Count bidirectional pairs to decide curve direction
+      const pairCount = {};
+      for (const g of edgeGroups.values()) {
+        const pk = [g.from, g.to].sort().join('|||');
+        pairCount[pk] = (pairCount[pk] || 0) + 1;
+      }
+      const pairSeen = {};
+      _edgeCurveMap.clear();
+
+      for (const [key, g] of edgeGroups) {
+        const pk = [g.from, g.to].sort().join('|||');
+        const isBi = pairCount[pk] >= 2;
+        pairSeen[pk] = (pairSeen[pk] || 0) + 1;
+        const seenN = pairSeen[pk];
+        // Self-loop: curveAmount unused (handled inside getEdgeGeometry)
+        // Bidirectional: alternate curve sides; single: fixed offset 30
+        const curveAmt = (g.from === g.to) ? 30 : (isBi ? (seenN === 1 ? 35 : -35) : 30);
+        _edgeCurveMap.set(key, curveAmt);
+        drawGroupedTransition(g, curveAmt);
+      }
+
       if (pendingTransition && transitionSource) drawPendingTransition();
       states.forEach(state => drawState(state));
-      updateTransitionTable();
-      updateStatistics();
+
+      // Only update DOM panels when not mid-drag (performance)
+      if (!draggingState) {
+        updateTransitionTable();
+        updateStatistics();
+      }
     }
 
     function drawGrid() {
@@ -2373,11 +2458,13 @@ q1, b, q2</textarea>
       const isAccept   = acceptStates.has(state.id);
       const isSelected = selectedState === state.id;
       const isSource   = transitionSource === state.id;
+      const isDead     = state.isDead || state.label === '∅';
 
       const baseColor   = getComputedColor('--node-default') || '#e5e5ea';
       const activeColor = getComputedColor('--node-active')  || '#0071e3';
       const acceptColor = getComputedColor('--node-accept')  || '#34c759';
       const textColor   = getComputedColor('--text-primary') || '#1d1d1f';
+      const deadColor   = getComputedColor('--text-tertiary') || '#86868b';
 
       if (isActive) {
         ctx.save();
@@ -2398,6 +2485,26 @@ q1, b, q2</textarea>
         ctx.setLineDash([5, 5]);
         ctx.stroke();
         ctx.setLineDash([]);
+      }
+
+      // Dead / trap state: dashed grey circle
+      if (isDead) {
+        ctx.beginPath();
+        ctx.arc(state.x, state.y, STATE_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = isActive ? activeColor : (baseColor + '80');
+        ctx.fill();
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = isActive ? activeColor : deadColor;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Draw the ∅ label
+        ctx.fillStyle = isActive ? '#ffffff' : deadColor;
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('∅', state.x, state.y);
+        return; // skip normal rendering below
       }
 
       ctx.beginPath();
@@ -2427,7 +2534,7 @@ q1, b, q2</textarea>
       ctx.fillText(state.label, state.x, state.y);
 
       if (isStart) {
-        const arrowStartX = state.x - STATE_RADIUS - 35;
+        const arrowStartX = Math.max(5, state.x - STATE_RADIUS - 35);
         const arrowStartY = state.y;
         const arrowEndX   = state.x - STATE_RADIUS - 8;
         const arrowEndY   = state.y;
@@ -2467,14 +2574,15 @@ q1, b, q2</textarea>
       return -Math.PI / 4;                   // default: top-right
     }
 
-    // FIX: Edge geometry with adaptive self-loop direction
-    function getEdgeGeometry(transition) {
+    // FIX: Edge geometry with adaptive self-loop direction; accepts optional curveAmount
+    function getEdgeGeometry(transition, curveAmount) {
       const fromState = states.find(s => s.id === transition.from);
       const toState   = states.find(s => s.id === transition.to);
       if (!fromState || !toState) return null;
 
       const isSelfLoop = transition.from === transition.to;
       let startX, startY, endX, endY, controlX, controlY;
+      const cAmt = (curveAmount !== undefined) ? curveAmount : 30;
 
       if (isSelfLoop) {
         const loopAngle  = getSelfLoopAngle(fromState);
@@ -2501,35 +2609,33 @@ q1, b, q2</textarea>
         const midX        = (fromState.x + toState.x) / 2;
         const midY        = (fromState.y + toState.y) / 2;
         const perp        = angle + Math.PI / 2;
-        const curveAmount = 30;
-        controlX = midX + curveAmount * Math.cos(perp);
-        controlY = midY + curveAmount * Math.sin(perp);
+        controlX = midX + cAmt * Math.cos(perp);
+        controlY = midY + cAmt * Math.sin(perp);
       }
 
       return { startX, startY, endX, endY, controlX, controlY, isSelfLoop };
     }
 
-    function drawTransition(transition) {
-      const fromState = states.find(s => s.id === transition.from);
-      const toState   = states.find(s => s.id === transition.to);
+    // ── New: draw a merged edge group (one or more symbols, same from→to) ──
+    function drawGroupedTransition(group, curveAmount) {
+      const fromState = states.find(s => s.id === group.from);
+      const toState   = states.find(s => s.id === group.to);
       if (!fromState || !toState) return;
 
-      const geo = getEdgeGeometry(transition);
+      const geo = getEdgeGeometry({ from: group.from, to: group.to }, curveAmount);
       if (!geo) return;
 
       const { startX, startY, endX, endY, controlX, controlY } = geo;
-
       const textColor   = getComputedColor('--text-primary') || '#1d1d1f';
       const accentColor = getComputedColor('--accent')       || '#0071e3';
 
-      // Highlight only the most recent step's transitions
+      // A group is "active" if ANY of its symbols was used in the last step
       const lastHistory = simulationState.history[simulationState.history.length - 1];
-      const isActive = lastHistory &&
-        lastHistory.transitions &&
-        lastHistory.transitions.some(t =>
-          t.from === transition.from &&
-          t.to   === transition.to   &&
-          t.symbol === transition.symbol
+      const isActive = lastHistory && lastHistory.transitions &&
+        group.symbols.some(sym =>
+          lastHistory.transitions.some(t =>
+            t.from === group.from && t.to === group.to && t.symbol === sym
+          )
         );
 
       ctx.beginPath();
@@ -2550,15 +2656,25 @@ q1, b, q2</textarea>
       ctx.fillStyle = isActive ? accentColor : (getComputedColor('--text-tertiary') || '#86868b');
       ctx.fill();
 
-      const labelX = controlX;
-      const labelY = controlY;
+      // Label: combine all symbols with comma
+      const label = group.symbols.join(',');
+      const labelX = controlX, labelY = controlY;
+      const lw = Math.max(24, label.length * 8 + 12);
       ctx.fillStyle = getComputedColor('--bg-secondary') || '#ffffff';
-      ctx.fillRect(labelX - 14, labelY - 10, 28, 20);
-      ctx.fillStyle = textColor;
+      ctx.fillRect(labelX - lw / 2, labelY - 11, lw, 22);
+      ctx.fillStyle = isActive ? accentColor : textColor;
       ctx.font = 'bold 13px JetBrains Mono, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(transition.symbol, labelX, labelY);
+      ctx.fillText(label, labelX, labelY);
+    }
+
+    // Keep old drawTransition for compatibility (no longer called from render)
+    function drawTransition(transition) {
+      drawGroupedTransition(
+        { from: transition.from, to: transition.to, symbols: [transition.symbol] },
+        _edgeCurveMap.get(transition.from + '|||' + transition.to) || 30
+      );
     }
 
     function drawPendingTransition() {
@@ -2625,11 +2741,17 @@ q1, b, q2</textarea>
       return null;
     }
 
-    // FIX: Hit-detection checks along the entire Bézier curve, not just at the label
+    // FIX: Hit-detection uses the same curveAmount stored during render
     function getTransitionAtPosition(x, y) {
       const threshold = 12;
+      // Build unique (from,to) pairs — check per group
+      const seen = new Set();
       for (const t of transitions) {
-        const geo = getEdgeGeometry(t);
+        const key = t.from + '|||' + t.to;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const curveAmt = _edgeCurveMap.get(key) || 30;
+        const geo = getEdgeGeometry(t, curveAmt);
         if (!geo) continue;
         // Sample 25 points along the quadratic bezier
         for (let k = 0; k <= 25; k++) {
@@ -2742,6 +2864,7 @@ q1, b, q2</textarea>
         return;
       }
       const initialStates = epsilonClosure([startState]);
+      _execTrace = [];
       simulationState = {
         isRunning: true,
         isPaused: false,
@@ -2750,11 +2873,14 @@ q1, b, q2</textarea>
         processedInput: '',
         history: [{ activeStates: initialStates, transitions: [], processedInput: '' }]
       };
+      const initLabels = initialStates.map(id => { const s = states.find(st=>st.id===id); return s?s.label:id; });
+      _execTrace.push({ type:'init', text: `Start → {${initLabels.join(', ')}}` });
       showStatus('Running...', 'running');
       updateInputDisplay();
       updateCurrentStateDisplay();
+      updateExecTrace();
       render();
-      // FIX: empty string is valid input — check acceptance immediately
+      // empty string is valid input — check acceptance immediately
       if (inputString.length === 0) finishSimulation();
     }
 
@@ -2823,8 +2949,16 @@ q1, b, q2</textarea>
       simulationState.processedInput = newProcessed;
       simulationState.currentStep++;
 
+      // Record execution trace entry
+      const afterLabels = newActiveStates.map(id => { const s = states.find(st=>st.id===id); return s?s.label:id; });
+      _execTrace.push({
+        type: newActiveStates.length === 0 ? 'dead' : 'step',
+        text: `'${currentSymbol}' → {${afterLabels.length ? afterLabels.join(', ') : '∅ (dead)'}}`
+      });
+
       updateInputDisplay();
       updateCurrentStateDisplay();
+      updateExecTrace();
       render();
 
       if (simulationState.processedInput.length >= inputString.length) finishSimulation();
@@ -2836,7 +2970,6 @@ q1, b, q2</textarea>
       simulationState.currentStep--;
       simulationState.history.pop();
 
-      // FIX #6: history[0] is the initial step — access index directly rather than relying on pop result
       const prevHistory = simulationState.history.length > 0
         ? simulationState.history[simulationState.history.length - 1]
         : null;
@@ -2844,39 +2977,46 @@ q1, b, q2</textarea>
       if (prevHistory) {
         simulationState.activeStates   = prevHistory.activeStates && prevHistory.activeStates.length > 0
           ? prevHistory.activeStates
-          : (startState ? epsilonClosure([startState]) : []);  // always epsilon-closed
+          : (startState ? epsilonClosure([startState]) : []);
         simulationState.processedInput = prevHistory.processedInput || '';
       } else {
-        // Truly back at step 0 — restore initial epsilon closure of start state
         simulationState.activeStates   = startState ? epsilonClosure([startState]) : [];
         simulationState.processedInput = '';
       }
 
-      // Reset isRunning when back at step 0
-      if (simulationState.currentStep === 0) {
+      // Keep isRunning=true so pressing Next continues from this point (not a fresh restart)
+      // Only revert to false if we genuinely have never started (no history at all)
+      if (simulationState.currentStep === 0 && simulationState.history.length === 0) {
         simulationState.isRunning = false;
         showStatus('Ready', 'running');
       } else {
+        simulationState.isRunning = true;
         showStatus('Running...', 'running');
       }
 
       updateInputDisplay();
       updateCurrentStateDisplay();
+      updateExecTrace();
       render();
     }
 
     function finishSimulation() {
       simulationState.isRunning = false;
       const isAccepted = simulationState.activeStates.some(s => acceptStates.has(s));
+      // Mark processedInput as the full string so remaining chars display correctly
+      simulationState.processedInput = document.getElementById('inputString').value;
       showStatus(isAccepted ? 'Accepted ✓' : 'Rejected ✗', isAccepted ? 'accepted' : 'rejected');
+      _execTrace.push({ type: isAccepted ? 'accept' : 'reject', text: isAccepted ? '✓ Accepted' : '✗ Rejected' });
       stopAutoPlay();
       updateInputDisplay();
       updateCurrentStateDisplay();
+      updateExecTrace();
       render();
     }
 
     function resetSimulation() {
       stopAutoPlay();
+      _execTrace = [];
       simulationState = {
         isRunning: false,
         isPaused: false,
@@ -2888,6 +3028,7 @@ q1, b, q2</textarea>
       showStatus('Ready', 'running');
       updateInputDisplay();
       updateCurrentStateDisplay();
+      updateExecTrace();
       render();
     }
 
@@ -2975,6 +3116,35 @@ q1, b, q2</textarea>
       }
     }
 
+    // ── Execution Trace panel updater ──
+    function toggleExecTrace() {
+      const container = document.getElementById('execTraceContainer');
+      const btn = document.getElementById('traceBtn');
+      if (!container) return;
+      if (container.style.display === 'none' || container.style.display === '') {
+        container.style.display = 'block';
+        if (btn) btn.style.background = 'var(--accent-light)';
+        updateExecTrace();
+      } else {
+        container.style.display = 'none';
+        if (btn) btn.style.background = '';
+      }
+    }
+
+    function updateExecTrace() {
+      const container = document.getElementById('execTraceContainer');
+      const log = document.getElementById('execTraceLog');
+      if (!container || !log) return;
+      // Only update content; visibility is controlled by toggleExecTrace
+      if (container.style.display === 'none' || container.style.display === '') return;
+      if (_execTrace.length === 0) { log.innerHTML = ''; return; }
+      const colors = { init:'var(--text-secondary)', step:'var(--text-primary)', dead:'var(--error)', accept:'var(--success)', reject:'var(--error)' };
+      log.innerHTML = _execTrace.map((e, i) =>
+        `<span style="color:${colors[e.type]||'var(--text-primary)'};">${String(i).padStart(2,'0')} ${e.text}</span>`
+      ).join('');
+      log.scrollTop = log.scrollHeight;
+    }
+
     // FIX: Show ε column in NFA; add DFA validity check
     function updateTransitionTable() {
       const tbody = document.getElementById('transitionTableBody');
@@ -2995,7 +3165,7 @@ q1, b, q2</textarea>
         cols.forEach(sym => {
           const targets = transitions
             .filter(t => t.from === state.id && t.symbol === sym)
-            .map(t => { const ts = states.find(s => s.id === t.to); return ts ? ts.label : '?'; });
+            .map(t => { const ts = states.find(s => s.id === t.to); return ts ? ts.label : t.to; });
           bodyHtml += `<td>${targets.join(',') || '-'}</td>`;
         });
         bodyHtml += '</tr>';
@@ -3026,7 +3196,7 @@ q1, b, q2</textarea>
             !transitions.some(t => t.from === state.id && t.symbol === sym)
           )
         );
-        warningEl.style.display = incomplete ? 'inline-flex' : 'none';
+        warningEl.style.display = incomplete ? 'flex' : 'none';
       } else {
         warningEl.style.display = 'none';
       }
@@ -3242,7 +3412,7 @@ q1, b, q2</textarea>
         }
       },
       {
-        name: 'Even # of a\'s (ε-NFA)',
+        name: 'Even # of a\'s',
         alphabet: 'a,b',
         input: 'aabba',
         build() {
@@ -3288,8 +3458,10 @@ q1, b, q2</textarea>
       document.getElementById('alphabetInput').value = ex.alphabet;
       updateAlphabet();
 
-      // Build states + transitions (positions are set inside build())
+      // Build states + transitions as a single undo unit
+      _suppressUndo = true;
       ex.build();
+      _suppressUndo = false;
 
       document.getElementById('inputString').value = ex.input;
       updateInputDisplay();
@@ -3333,11 +3505,11 @@ q1, b, q2</textarea>
 
     function convertNFAtoDFA() {
       if (currentMode !== 'NFA') {
-        alert('Switch to NFA mode first.');
+        convToast('Switch to NFA mode first.', 'warn');
         return;
       }
       if (!startState) {
-        alert('No start state defined.');
+        convToast('No start state defined.', 'warn');
         return;
       }
 
@@ -3537,7 +3709,7 @@ q1, b, q2</textarea>
       render();
     }
 
-    // FIX #2: Empty input now cancels instead of silently defaulting to 'a'
+    // FIX: Empty input now cancels; validates symbols against alphabet; warns on DFA duplicates
     function confirmTransition() {
       const rawInput = document.getElementById('symbolInput').value.trim();
       if (!rawInput) {
@@ -3546,6 +3718,22 @@ q1, b, q2</textarea>
       }
       const symbols = rawInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
       if (symbols.length === 0) { closeSymbolModal(); return; }
+
+      // Warn about symbols not in the defined alphabet (but still allow)
+      const outsideAlphabet = symbols.filter(s => s !== EPSILON && !alphabet.includes(s));
+      if (outsideAlphabet.length > 0) {
+        convToast(`Symbol(s) "${outsideAlphabet.join(', ')}" not in alphabet — added anyway. Update alphabet if intended.`, 'warn', 4000);
+      }
+
+      // In DFA mode: warn if a transition on this symbol already exists from source
+      if (currentMode === 'DFA' && transitionSource && pendingTransitionTargetId) {
+        const dupes = symbols.filter(sym =>
+          transitions.some(t => t.from === transitionSource && t.symbol === sym)
+        );
+        if (dupes.length > 0) {
+          convToast(`DFA already has a transition on "${dupes.join(', ')}" from this state — creates non-determinism.`, 'warn', 4000);
+        }
+      }
 
       if (transitionSource && pendingTransitionTargetId) {
         saveToUndo();
@@ -3564,6 +3752,9 @@ q1, b, q2</textarea>
     }
 
     function handleCanvasClick(e) {
+      // Guard: skip if this click is the tail-end of a drag gesture
+      if (_didDrag) { _didDrag = false; return; }
+
       const { x, y }     = getCanvasPos(e);
       const clickedState = getStateAtPosition(x, y);
 
@@ -3627,6 +3818,9 @@ q1, b, q2</textarea>
     }
 
     function handleCanvasMouseDown(e) {
+      _didDrag = false;
+      _dragStartX = e.clientX;
+      _dragStartY = e.clientY;
       if (currentTool !== 'select') return;
       const { x, y } = getCanvasPos(e);
       const state = getStateAtPosition(x, y);
@@ -3642,6 +3836,9 @@ q1, b, q2</textarea>
     function handleCanvasMouseMove(e) {
       const { x, y } = getCanvasPos(e);
       lastMousePos = { x, y };
+      // Mark as drag if mouse moved more than 5px from click start
+      const dx = e.clientX - _dragStartX, dy = e.clientY - _dragStartY;
+      if (dx*dx + dy*dy > 25) _didDrag = true;
       if (draggingState) {
         draggingState.x = Math.max(STATE_RADIUS + 10, Math.min(canvas.width  - STATE_RADIUS - 10, x - dragOffset.x));
         draggingState.y = Math.max(STATE_RADIUS + 10, Math.min(canvas.height - STATE_RADIUS - 10, y - dragOffset.y));
@@ -3661,6 +3858,14 @@ q1, b, q2</textarea>
     }
 
     function handleKeyDown(e) {
+      // Only process shortcuts when the Simulator page is active
+      if (!document.getElementById('page-simulator')?.classList.contains('active')) return;
+
+      if (document.getElementById('renameModal').classList.contains('flex')) {
+        if (e.key === 'Escape') closeRenameModal();
+        if (e.key === 'Enter')  confirmRename();
+        return;
+      }
       if (document.getElementById('symbolModal').classList.contains('flex')) {
         if (e.key === 'Escape') closeSymbolModal();
         if (e.key === 'Enter')  confirmTransition();
@@ -3728,6 +3933,111 @@ q1, b, q2</textarea>
     }
 
     // ============================================
+    // DEAD STATE TOOL
+    // ============================================
+
+    function addDeadState() {
+      const DEAD_LABEL = '∅';
+      // Check if dead state already exists
+      const existing = states.find(s => s.label === DEAD_LABEL);
+      if (existing) {
+        convToast('Dead state (∅) already exists on the canvas.', 'warn'); return;
+      }
+      saveToUndo();
+      // Place it at bottom-right of canvas
+      const x = Math.max(STATE_RADIUS + 10, canvas.width  - STATE_RADIUS - 60);
+      const y = Math.max(STATE_RADIUS + 10, canvas.height - STATE_RADIUS - 60);
+      const id = 'q' + stateCounter++;
+      states.push({ id, label: DEAD_LABEL, x, y, isDead: true });
+      // Add self-loops for every alphabet symbol
+      alphabet.forEach(sym => addTransition(id, id, sym));
+      convToast('Dead state (∅) added. All missing DFA transitions should point here.', 'info', 3500);
+      render();
+    }
+
+    function completeDFA() {
+      if (currentMode !== 'DFA') {
+        convToast('Switch to DFA mode first.', 'warn'); return;
+      }
+      if (alphabet.length === 0) {
+        convToast('Define an alphabet first.', 'warn'); return;
+      }
+      // Ensure dead state exists
+      let deadState = states.find(s => s.label === '∅');
+      if (!deadState) {
+        saveToUndo();
+        const x = Math.max(STATE_RADIUS + 10, canvas.width  - STATE_RADIUS - 60);
+        const y = Math.max(STATE_RADIUS + 10, canvas.height - STATE_RADIUS - 60);
+        const id = 'q' + stateCounter++;
+        states.push({ id, label: '∅', x, y, isDead: true });
+        deadState = states[states.length - 1];
+        alphabet.forEach(sym => addTransition(deadState.id, deadState.id, sym));
+      } else {
+        saveToUndo();
+      }
+      // Fill missing transitions for all other states
+      let filled = 0;
+      states.forEach(state => {
+        if (state.id === deadState.id) return;
+        alphabet.forEach(sym => {
+          const hasIt = transitions.some(t => t.from === state.id && t.symbol === sym);
+          if (!hasIt) { addTransition(state.id, deadState.id, sym); filled++; }
+        });
+      });
+      convToast(`DFA completed — ${filled} missing transition(s) routed to ∅.`, 'success', 3500);
+      render();
+    }
+
+    // ============================================
+    // STATE LABEL EDITING (double-click)
+    // ============================================
+
+    let _renamingStateId = null;
+
+    function handleCanvasDoubleClick(e) {
+      // Only in select mode
+      if (currentTool !== 'select') return;
+      const { x, y } = getCanvasPos(e);
+      const clicked = getStateAtPosition(x, y);
+      if (!clicked) return;
+      openRenameModal(clicked.id);
+    }
+
+    function openRenameModal(stateId) {
+      _renamingStateId = stateId;
+      const st = states.find(s => s.id === stateId);
+      const modal = document.getElementById('renameModal');
+      document.getElementById('renameInput').value = st ? st.label : '';
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => document.getElementById('renameInput').select(), 50);
+    }
+
+    function closeRenameModal() {
+      const modal = document.getElementById('renameModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      _renamingStateId = null;
+    }
+
+    function confirmRename() {
+      const newLabel = document.getElementById('renameInput').value.trim();
+      if (!newLabel) { closeRenameModal(); return; }
+      if (!_renamingStateId) { closeRenameModal(); return; }
+      // Check for duplicate labels
+      const duplicate = states.find(s => s.label === newLabel && s.id !== _renamingStateId);
+      if (duplicate) {
+        convToast(`Label "${newLabel}" is already used by another state.`, 'error'); return;
+      }
+      saveToUndo();
+      const st = states.find(s => s.id === _renamingStateId);
+      if (st) st.label = newLabel;
+      closeRenameModal();
+      render();
+      convToast(`State renamed to "${newLabel}".`, 'success', 2000);
+    }
+
+    // ============================================
     // INITIALIZATION
     // ============================================
 
@@ -3736,6 +4046,7 @@ q1, b, q2</textarea>
       resizeCanvas();
 
       canvas.addEventListener('click',     handleCanvasClick);
+      canvas.addEventListener('dblclick',  handleCanvasDoubleClick);
       canvas.addEventListener('mousedown', handleCanvasMouseDown);
       canvas.addEventListener('mousemove', handleCanvasMouseMove);
       canvas.addEventListener('mouseup',   handleCanvasMouseUp);
