@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
+      --btn-gradient: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #a855f7 100%);
+      --btn-shadow: 0 8px 28px rgba(236,72,153,0.4);
       --bg-primary: #fafafa;
       --bg-secondary: #ffffff;
       --bg-tertiary: #f5f5f7;
@@ -34,6 +36,8 @@
     }
 
     [data-theme="dark"] {
+      --btn-gradient: linear-gradient(135deg, #f43f5e 0%, #a855f7 50%, #22d3ee 100%);
+      --btn-shadow: 0 8px 28px rgba(168,85,247,0.5);
       --bg-primary: #000000;
       --bg-secondary: #1c1c1e;
       --bg-tertiary: #2c2c2e;
@@ -118,7 +122,7 @@
     }
 
     .btn-primary {
-      background: var(--accent);
+      background: var(--btn-gradient);
       color: white;
       padding: 14px 32px;
       border-radius: 12px;
@@ -129,8 +133,10 @@
       transition: all 0.2s ease;
       position: relative;
       overflow: hidden;
+      background-size: 200% 200%;
+      animation: gradient-shift 4s ease infinite;
     }
-    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,113,227,0.35); }
+    .btn-primary:hover { filter: brightness(1.12); transform: translateY(-2px); box-shadow: var(--btn-shadow); }
     .btn-primary:active { transform: translateY(0); }
     .btn-primary:focus-visible { outline: 3px solid var(--accent-light); outline-offset: 2px; }
 
@@ -1111,16 +1117,16 @@
             <p class="text-xl text-text-secondary mb-10 max-w-lg animate-fade-in-up stagger-3" style="color: var(--text-secondary);">
               Master the <strong style="color:var(--text-primary);">subset construction algorithm</strong> through interactive step-by-step visualization. Watch every ε-closure, move, and DFA state form in real time.
             </p>
-            <div class="flex flex-wrap gap-4 animate-fade-in-up stagger-4">
-              <button class="btn-primary flex items-center gap-3" onclick="showPage('convert')">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="17 1 21 5 17 9"></polyline>
-                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                  <polyline points="7 23 3 19 7 15"></polyline>
-                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            <!-- Grid: 2 cols so NFA→DFA can span both perfectly -->
+            <div class="animate-fade-in-up stagger-4" style="display:inline-grid; grid-template-columns:auto auto; gap:16px;">
+              <!-- Row 1, Col 1 -->
+              <button class="btn-secondary flex items-center gap-2" onclick="showPage('simulator')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
-                Open NFA→DFA Converter
+                Simulator
               </button>
+              <!-- Row 1, Col 2 -->
               <button class="btn-secondary flex items-center gap-2" onclick="showPage('learn')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
@@ -1128,11 +1134,15 @@
                 </svg>
                 Learn the Theory
               </button>
-              <button class="btn-secondary flex items-center gap-2" onclick="showPage('simulator')">
+              <!-- Row 2: spans BOTH columns — starts at Simulator left, ends at Learn right -->
+              <button class="btn-primary flex items-center justify-center gap-2" style="grid-column: 1 / span 2;" onclick="showPage('convert')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  <polyline points="17 1 21 5 17 9"></polyline>
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                  <polyline points="7 23 3 19 7 15"></polyline>
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                 </svg>
-                Simulator
+                NFA→DFA Converter
               </button>
             </div>
           </div>
