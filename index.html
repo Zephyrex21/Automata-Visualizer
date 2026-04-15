@@ -902,6 +902,8 @@
   <!-- Home Page -->
   <section id="page-home" class="page-section active">
     <div class="min-h-screen hero-gradient relative overflow-hidden pt-24">
+      <!-- Particle canvas — sits above decorative bg, below content -->
+      <canvas id="heroParticleCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <div class="absolute top-20 right-10 w-96 h-96 rounded-full bg-gradient-to-br from-blue-200/30 to-transparent blur-3xl animate-float"></div>
         <div class="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-gradient-to-tr from-green-200/30 to-transparent blur-3xl animate-float" style="animation-delay: 1s;"></div>
@@ -5276,6 +5278,154 @@ q1, b, q2</textarea>
     document.addEventListener('DOMContentLoaded',()=>{ convInitCanvases(); });
     if (document.readyState!=='loading') convInitCanvases();
 
+  </script>
+
+  <!-- ============================================================
+       HERO PARTICLE REPULSION SYSTEM
+       ============================================================ -->
+  <script>
+  (function () {
+    const canvas  = document.getElementById('heroParticleCanvas');
+    const hero    = document.querySelector('#page-home .min-h-screen');
+    if (!canvas || !hero) return;
+
+    const ctx     = canvas.getContext('2d');
+    let W = 0, H = 0;
+    let mouse     = { x: -9999, y: -9999 };
+    let particles = [];
+    let rafId     = null;
+    let running   = false;
+
+    /* ── tunables ── */
+    const COUNT         = 160;   // number of particles
+    const REPEL_RADIUS  = 110;   // px — how far the cursor pushes
+    const REPEL_FORCE   = 6.5;   // strength of repulsion
+    const SPRING        = 0.045; // how fast particles return home
+    const DAMPING       = 0.88;  // velocity decay (lower = more friction)
+    const DOT_RADIUS    = 1.8;   // particle dot size
+
+    /* ── resize: fit canvas to hero div ── */
+    function resize() {
+      const rect = hero.getBoundingClientRect();
+      W = canvas.width  = hero.offsetWidth;
+      H = canvas.height = hero.offsetHeight;
+      // Respawn particles proportionally when resized
+      particles.forEach(p => {
+        const rx = p.ox / (p._W || W);
+        const ry = p.oy / (p._H || H);
+        p.ox = rx * W;
+        p.oy = ry * H;
+        p._W = W; p._H = H;
+      });
+    }
+
+    /* ── create particles scattered randomly across hero ── */
+    function spawnParticles() {
+      particles = [];
+      for (let i = 0; i < COUNT; i++) {
+        const ox = Math.random() * W;
+        const oy = Math.random() * H;
+        particles.push({
+          x: ox, y: oy,   // current pos
+          ox, oy,          // home pos
+          vx: 0, vy: 0,   // velocity
+          _W: W, _H: H,   // reference size for proportional resize
+          size: DOT_RADIUS * (0.6 + Math.random() * 0.8),
+          opacity: 0.25 + Math.random() * 0.45,
+        });
+      }
+    }
+
+    /* ── pick particle colour based on theme ── */
+    function particleColor(opacity) {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      return isDark
+        ? `rgba(90, 170, 255, ${opacity})`
+        : `rgba(0, 113, 227, ${opacity})`;
+    }
+
+    /* ── main animation loop ── */
+    function tick() {
+      ctx.clearRect(0, 0, W, H);
+
+      for (const p of particles) {
+        /* repulsion from mouse */
+        const dx   = p.x - mouse.x;
+        const dy   = p.y - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < REPEL_RADIUS && dist > 0) {
+          const force = (1 - dist / REPEL_RADIUS) * REPEL_FORCE;
+          p.vx += (dx / dist) * force;
+          p.vy += (dy / dist) * force;
+        }
+
+        /* spring back to home */
+        p.vx += (p.ox - p.x) * SPRING;
+        p.vy += (p.oy - p.y) * SPRING;
+
+        /* damping */
+        p.vx *= DAMPING;
+        p.vy *= DAMPING;
+
+        /* integrate */
+        p.x += p.vx;
+        p.y += p.vy;
+
+        /* draw */
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = particleColor(p.opacity);
+        ctx.fill();
+      }
+
+      if (running) rafId = requestAnimationFrame(tick);
+    }
+
+    /* ── start / stop tied to home page visibility ── */
+    function startAnim() {
+      if (running) return;
+      running = true;
+      rafId = requestAnimationFrame(tick);
+    }
+    function stopAnim() {
+      running = false;
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    }
+
+    /* ── mouse tracking (relative to canvas) ── */
+    window.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+    window.addEventListener('mouseleave', () => {
+      mouse.x = -9999; mouse.y = -9999;
+    });
+
+    /* ── watch page-home for active class changes ── */
+    const homeSection = document.getElementById('page-home');
+    const pageObserver = new MutationObserver(() => {
+      if (homeSection.classList.contains('active')) {
+        resize();
+        startAnim();
+      } else {
+        stopAnim();
+      }
+    });
+    pageObserver.observe(homeSection, { attributes: true, attributeFilter: ['class'] });
+
+    /* ── resize observer on hero div ── */
+    const ro = new ResizeObserver(resize);
+    ro.observe(hero);
+
+    /* ── boot ── */
+    resize();
+    spawnParticles();
+    // Only start if home is currently active (it is by default)
+    if (homeSection.classList.contains('active')) startAnim();
+
+  })();
   </script>
 </body>
 </html>
