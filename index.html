@@ -1990,6 +1990,9 @@
             <button class="conv-btn-icon" id="convNextBtn" onclick="convNext()" title="Next (→)" style="width:36px;height:36px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
             </button>
+            <button class="conv-btn conv-btn-secondary" id="convEndBtn" onclick="convJumpToEnd()" title="Jump to Complete DFA" style="padding:6px 12px;font-size:11px;font-weight:700;white-space:nowrap;">
+              ⇥ Final DFA
+            </button>
           </div>
           <!-- Speed -->
           <div class="conv-hidden speed-control" id="convSpeedControl" style="padding:5px 12px;">
@@ -3602,7 +3605,8 @@ q1, b, q2</textarea>
         newStates.push({
           id: entry.dfaId, label: entry.dfaId,
           x: cx + radius * Math.cos(angle),
-          y: cy + radius * Math.sin(angle)
+          y: cy + radius * Math.sin(angle),
+          isDead: entry.dfaId === '∅'
         });
         for (const nfaS of entry.nfaStates) {
           if (nfaAccept.has(nfaS)) { newAccept.add(entry.dfaId); break; }
@@ -4436,10 +4440,14 @@ q1, b, q2</textarea>
 
       let fillCol, strokeCol, textFill;
       if (isDead) {
-        // Dead state always renders as muted grey regardless of highlight
-        fillCol   = highlight === 'active' ? '#636366' : (convCC('--bg-tertiary') || '#f5f5f7');
-        strokeCol = deadCol;
-        textFill  = highlight === 'active' ? '#fff' : deadCol;
+        // Dead state — use clearly visible grey that contrasts with both light & dark canvases
+        const darkMode = convCC('--bg-secondary').trim() !== '#ffffff' &&
+                         convCC('--bg-secondary').trim() !== 'rgb(255, 255, 255)';
+        fillCol   = highlight === 'active' ? '#636366'
+                  : (darkMode ? '#48484a' : '#d1d1d6');
+        strokeCol = '#86868b';
+        textFill  = highlight === 'active' ? '#fff'
+                  : (darkMode ? '#c7c7cc' : '#3a3a3c');
       } else {
         switch (highlight) {
           case 'active':      fillCol = warnCol;  strokeCol = warnCol;  textFill = '#fff'; break;
@@ -4464,6 +4472,19 @@ q1, b, q2</textarea>
 
       // Dashed border for dead state, solid for others
       if (isDead) {
+        // Draw hatching pattern inside dead state circle for extra clarity
+        ctx.save();
+        ctx.beginPath(); ctx.arc(state.x, state.y, CONV_R - 1, 0, Math.PI*2);
+        ctx.clip();
+        ctx.strokeStyle = strokeCol + '50';
+        ctx.lineWidth = 1;
+        for (let d = -CONV_R * 2; d < CONV_R * 2; d += 7) {
+          ctx.beginPath();
+          ctx.moveTo(state.x - CONV_R + d, state.y - CONV_R);
+          ctx.lineTo(state.x + d,          state.y + CONV_R);
+          ctx.stroke();
+        }
+        ctx.restore();
         ctx.save();
         ctx.setLineDash([4, 3]);
         ctx.strokeStyle = strokeCol; ctx.lineWidth = 2; ctx.stroke();
@@ -4609,7 +4630,14 @@ q1, b, q2</textarea>
 
       const stateObjs = [];
       for (const [,entry] of dfaMapSnap) {
-        const pos = conv.dfaPositions.get(entry.label) || {x:canvas.width/2, y:canvas.height/2};
+        let pos = conv.dfaPositions.get(entry.label);
+        // Dead state might appear mid-conversion before layout was updated — ensure corner position
+        if (!pos && entry.label === '∅') {
+          const pad = CONV_R + 14;
+          pos = { x: canvas.width - pad - 10, y: canvas.height - pad - 10 };
+          conv.dfaPositions.set('∅', pos); // cache it
+        }
+        pos = pos || { x: canvas.width/2, y: canvas.height/2 };
         stateObjs.push({id:entry.label, label:entry.label, x:pos.x, y:pos.y});
       }
 
@@ -4658,14 +4686,32 @@ q1, b, q2</textarea>
     function convLayoutDFA() {
       if (!conv.dfaStatesMap.size) return;
       const canvas = conv.dfaCanvas;
-      const labels = [...conv.dfaStatesMap.values()].map(e=>e.label);
-      const n=labels.length, cx=canvas.width/2, cy=canvas.height/2;
-      const r = n===1 ? 0 : Math.min(canvas.width,canvas.height)*0.31;
+      if (!canvas || !canvas.width) return;
+
+      // Separate dead/trap state from regular states
+      const allLabels     = [...conv.dfaStatesMap.values()].map(e => e.label);
+      const regularLabels = allLabels.filter(l => l !== '∅');
+      const hasDead       = allLabels.includes('∅');
+      const n  = regularLabels.length;
+      const cx = canvas.width  / 2;
+      const cy = canvas.height / 2;
+
+      // Regular states in a circle, shrunk slightly if dead state is present
+      const r = n <= 1 ? 0 : Math.min(canvas.width, canvas.height) * (hasDead ? 0.27 : 0.31);
       conv.dfaPositions.clear();
-      labels.forEach((lbl,i) => {
-        const ang = (2*Math.PI*i)/n - Math.PI/2;
-        conv.dfaPositions.set(lbl, {x:cx+r*Math.cos(ang), y:cy+r*Math.sin(ang)});
+      regularLabels.forEach((lbl, i) => {
+        const ang = (2 * Math.PI * i) / n - Math.PI / 2;
+        conv.dfaPositions.set(lbl, { x: cx + r * Math.cos(ang), y: cy + r * Math.sin(ang) });
       });
+
+      // Dead state anchored at bottom-right corner, clearly separated
+      if (hasDead) {
+        const pad = CONV_R + 14;
+        conv.dfaPositions.set('∅', {
+          x: canvas.width  - pad - 10,
+          y: canvas.height - pad - 10,
+        });
+      }
     }
 
     // ============================================================
@@ -4816,6 +4862,12 @@ q1, b, q2</textarea>
 
     function convNext() { if (conv.stepIndex<conv.steps.length-1) convApplyStep(conv.stepIndex+1); }
     function convPrev() { if (conv.stepIndex>0) convApplyStep(conv.stepIndex-1); }
+    function convJumpToEnd() {
+      if (!conv.steps.length) { convToast('Run the conversion first.','warn'); return; }
+      if (conv.autoInterval) convToggleAutoPlay(); // stop auto-play if running
+      convApplyStep(conv.steps.length - 1);
+      convToast('Jumped to final DFA — all states and transitions shown.','success',2500);
+    }
 
     function convToggleAutoPlay() {
       if (conv.autoInterval) {
@@ -5120,6 +5172,7 @@ q1, b, q2</textarea>
       switch (e.key) {
         case 'ArrowRight': e.preventDefault(); convNext(); break;
         case 'ArrowLeft':  e.preventDefault(); convPrev(); break;
+        case 'End':        e.preventDefault(); convJumpToEnd(); break;
         case ' ':
           e.preventDefault();
           if (conv.steps.length) convToggleAutoPlay();
