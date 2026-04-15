@@ -5465,7 +5465,7 @@ q1, b, q2</textarea>
   </script>
 
   <!-- ============================================================
-       PARTICLE SYSTEM v2 — Realistic physics, attraction clustering
+       PARTICLE SYSTEM v3 — Endless drift + space/water ripple on mouse
        Shared engine used by: Hero + CTA sections
        ============================================================ -->
   <script>
@@ -5476,60 +5476,56 @@ q1, b, q2</textarea>
        ════════════════════════════════════════════════════ */
     function createParticleSystem(canvas, hostEl, opts) {
       opts = Object.assign({
-        count:         110,
-        attractRadius: 180,
-        attractForce:  0.32,   // gravity-like pull toward mouse
-        orbitStrength: 0.08,   // tangential nudge → orbital feel
-        baseDrift:     0.28,   // natural idle speed
-        damping:       0.92,
-        connectionDist:120,
-        isHero:        false,
+        count:          110,
+        baseDrift:      0.28,
+        damping:        0.985,   // very light damping → particles stay alive forever
+        connectionDist: 120,
+        rippleForce:    0.18,    // how hard the ripple wave nudges particles
+        isHero:         false,
       }, opts);
 
       const ctx = canvas.getContext('2d');
       let W = 0, H = 0;
-      let mouse = { x: -9999, y: -9999, inside: false };
+      let mouse = { x: -9999, y: -9999, px: -9999, py: -9999, inside: false };
       let particles = [];
+      let ripples   = [];   // expanding ring waves
       let rafId = null;
       let running = false;
       let frame = 0;
+      let lastRippleMs = 0;
 
       /* ── Theme colours ── */
       function isDark() {
         return document.documentElement.getAttribute('data-theme') === 'dark';
       }
-      function starColor(a) {
-        return isDark() ? `rgba(180,210,255,${a})` : `rgba(15,60,160,${a})`;
-      }
-      function lineColor(a) {
-        return isDark() ? `rgba(140,190,255,${a})` : `rgba(20,80,200,${a})`;
-      }
-      function glowColor(a) {
-        return isDark() ? `rgba(120,180,255,${a})` : `rgba(0,90,220,${a})`;
-      }
+      function starColor(a)   { return isDark() ? `rgba(180,210,255,${a})` : `rgba(15,60,160,${a})`; }
+      function lineColor(a)   { return isDark() ? `rgba(140,190,255,${a})` : `rgba(20,80,200,${a})`; }
+      function glowColor(a)   { return isDark() ? `rgba(120,180,255,${a})` : `rgba(0,90,220,${a})`; }
+      function rippleColor(a) { return isDark() ? `rgba(160,200,255,${a})` : `rgba(30,100,230,${a})`; }
 
-      /* ── Spawn ── */
+      /* ── Particle factory ── */
       function makeParticle() {
-        // two independent sine-wave drift frequencies per axis → organic Lissajous paths
-        const freqX = 0.004 + Math.random() * 0.008;
-        const freqY = 0.003 + Math.random() * 0.009;
-        const phaseX = Math.random() * Math.PI * 2;
-        const phaseY = Math.random() * Math.PI * 2;
-        const ampX   = 0.15 + Math.random() * 0.55;
-        const ampY   = 0.15 + Math.random() * 0.55;
-        const size   = 0.7 + Math.random() * 2.6;
+        const freqX = 0.003 + Math.random() * 0.007;
+        const freqY = 0.002 + Math.random() * 0.008;
+        const size  = 0.7  + Math.random() * 2.6;
+        // Give every particle a healthy initial kick so they're never born still
+        const angle = Math.random() * Math.PI * 2;
+        const speed = opts.baseDrift * (0.6 + Math.random() * 1.2);
         return {
-          x: Math.random() * W,
-          y: Math.random() * H,
-          vx: (Math.random() - 0.5) * opts.baseDrift * 2,
-          vy: (Math.random() - 0.5) * opts.baseDrift * 2,
-          freqX, freqY, phaseX, phaseY, ampX, ampY,
+          x:  Math.random() * W,
+          y:  Math.random() * H,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          freqX, freqY,
+          phaseX: Math.random() * Math.PI * 2,
+          phaseY: Math.random() * Math.PI * 2,
+          ampX:   0.12 + Math.random() * 0.45,
+          ampY:   0.12 + Math.random() * 0.45,
           size,
-          baseOpacity:   0.28 + Math.random() * 0.6,
+          baseOpacity:   0.35 + Math.random() * 0.55,
           twinkleOffset: Math.random() * Math.PI * 2,
-          twinkleSpeed:  0.012 + Math.random() * 0.022,
+          twinkleSpeed:  0.010 + Math.random() * 0.018,
           isGiant: size > 2.8,
-          near: false,   // true when inside attract radius
         };
       }
 
@@ -5543,63 +5539,147 @@ q1, b, q2</textarea>
         H = canvas.height = hostEl.offsetHeight;
       }
 
+      /* ── Ripple factory — born at mouse position ── */
+      function spawnRipple(x, y, strength) {
+        const now = performance.now();
+        if (now - lastRippleMs < 300) return;  // one ripple burst per stop event
+        lastRippleMs = now;
+
+        // Primary large ring — "drop hits water" main wave
+        const maxR = 200 + Math.random() * 100;
+        const baseAlpha = Math.min(0.72, 0.45 + strength * 0.35);
+
+        ripples.push({
+          x, y,
+          r: 3,
+          maxR,
+          speed:    1.8 + Math.random() * 0.6,
+          alpha:    baseAlpha,
+          width:    1.6 + Math.random() * 0.5,
+          gravity:  true,   // this ring applies gravity bias
+        });
+
+        // First inner echo — medium ring, slight delay via smaller start radius
+        ripples.push({
+          x, y,
+          r: 1,
+          maxR: maxR * 0.62,
+          speed:   2.4 + Math.random() * 0.5,
+          alpha:   baseAlpha * 0.52,
+          width:   1.0,
+          gravity: false,
+        });
+
+        // Second inner echo — tiny fast ring (surface tension pop)
+        ripples.push({
+          x, y,
+          r: 1,
+          maxR: maxR * 0.28,
+          speed:   3.2 + Math.random() * 0.5,
+          alpha:   baseAlpha * 0.32,
+          width:   0.6,
+          gravity: false,
+        });
+      }
+
       /* ── Physics tick ── */
       function tick() {
         frame++;
         ctx.clearRect(0, 0, W, H);
 
+        /* ── 1. Update & apply ripples to nearby particles ── */
+        const liveRipples = [];
+        for (const rip of ripples) {
+          rip.r     += rip.speed;
+          rip.alpha *= 0.968;   // gentle fade as ring expands
+
+          if (rip.alpha > 0.015 && rip.r < rip.maxR) {
+            liveRipples.push(rip);
+
+            /* Apply a gentle outward nudge to particles sitting on the wavefront */
+            const band = 30;   // px either side of wavefront ring edge
+            for (const p of particles) {
+              const dx = p.x - rip.x, dy = p.y - rip.y;
+              const d  = Math.sqrt(dx * dx + dy * dy) || 0.001;
+              const gap = Math.abs(d - rip.r);
+              if (gap < band) {
+                const proximity = 1 - gap / band;
+                const force     = opts.rippleForce * proximity * rip.alpha;
+                p.vx += (dx / d) * force;
+                p.vy += (dy / d) * force;
+                // Gravity bias — particles arcing downward after the wave, like water drops
+                if (rip.gravity) {
+                  p.vy += force * 0.55;  // extra downward pull simulating gravity
+                }
+              }
+            }
+          }
+        }
+        ripples = liveRipples;
+
+        /* ── 2. Draw ripple rings (behind particles) ── */
+        for (const rip of ripples) {
+          const progress = rip.r / rip.maxR;
+          // Ease-out fade: bright at start, trails off sharply near max radius
+          const fadeEase = 1 - Math.pow(progress, 1.6);
+          const a = rip.alpha * fadeEase;
+          if (a < 0.01) continue;
+
+          // Outer soft glow halo (makes ring feel lit from within)
+          ctx.beginPath();
+          ctx.arc(rip.x, rip.y, rip.r, 0, Math.PI * 2);
+          ctx.strokeStyle = rippleColor(a * 0.28);
+          ctx.lineWidth   = (rip.width + 3) * (1 - progress * 0.5);
+          ctx.stroke();
+
+          // Core ring line
+          ctx.beginPath();
+          ctx.arc(rip.x, rip.y, rip.r, 0, Math.PI * 2);
+          ctx.strokeStyle = rippleColor(a);
+          ctx.lineWidth   = rip.width * (1 - progress * 0.5);
+          ctx.stroke();
+        }
+
+        /* ── 3. Particle physics — Lissajous drift + mouse repulsion ── */
+        const repelRadius   = 110;   // px — how far the repulsion field reaches
+        const repelStrength = 0.38;  // force multiplier
+
         for (const p of particles) {
-          const dx   = mouse.x - p.x;
-          const dy   = mouse.y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+          // Sine-wave steering → gentle drifting figure-eight paths
+          p.vx += Math.sin(frame * p.freqX + p.phaseX) * p.ampX * 0.009;
+          p.vy += Math.cos(frame * p.freqY + p.phaseY) * p.ampY * 0.009;
 
-          if (mouse.inside && dist < opts.attractRadius) {
-            p.near = true;
-            // Gravity-well attraction (stronger up close, softer at edge)
-            const falloff = 1 - (dist / opts.attractRadius);
-            const strength = opts.attractForce * falloff * falloff;
-
-            // Radial pull toward mouse
-            p.vx += (dx / dist) * strength;
-            p.vy += (dy / dist) * strength;
-
-            // Tangential orbital nudge (perpendicular to radial)
-            // Cross product gives clockwise orbit
-            p.vx += (-dy / dist) * opts.orbitStrength * falloff;
-            p.vy +=  (dx / dist) * opts.orbitStrength * falloff;
-
-            // Speed cap inside cluster — prevents wild teleporting
-            const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-            const maxSpd = 2.8 + (1 - falloff) * 1.5;
-            if (spd > maxSpd) {
-              p.vx = (p.vx / spd) * maxSpd;
-              p.vy = (p.vy / spd) * maxSpd;
-            }
-          } else {
-            p.near = false;
-            // Organic idle drift: sine-wave acceleration on each axis
-            // Creates gentle Lissajous-style paths instead of straight lines
-            p.vx += Math.sin(frame * p.freqX + p.phaseX) * p.ampX * 0.012;
-            p.vy += Math.cos(frame * p.freqY + p.phaseY) * p.ampY * 0.012;
-
-            // Soft speed floor — particles never completely stop
-            const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-            if (spd < opts.baseDrift * 0.4) {
-              p.vx += Math.sin(frame * p.freqX) * 0.04;
-              p.vy += Math.cos(frame * p.freqY) * 0.04;
-            }
-            // Soft speed cap for idle
-            if (spd > opts.baseDrift * 3.5) {
-              p.vx *= opts.baseDrift * 3.5 / spd;
-              p.vy *= opts.baseDrift * 3.5 / spd;
+          // ── Mouse repulsion ──
+          if (mouse.inside) {
+            const mdx = p.x - mouse.x;
+            const mdy = p.y - mouse.y;
+            const md  = Math.sqrt(mdx * mdx + mdy * mdy) || 0.001;
+            if (md < repelRadius) {
+              // Inverse-square falloff: strong up close, smooth at edge
+              const falloff = (1 - md / repelRadius);
+              const force   = repelStrength * falloff * falloff;
+              p.vx += (mdx / md) * force;
+              p.vy += (mdy / md) * force;
             }
           }
 
-          // Universal damping
+          // Very soft speed floor — never stop completely
+          const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+          if (spd < opts.baseDrift * 0.35) {
+            const boost = opts.baseDrift * 0.35 / (spd || 0.001);
+            p.vx *= boost;
+            p.vy *= boost;
+          }
+          // Soft speed ceiling — no teleporting
+          if (spd > opts.baseDrift * 6) {
+            p.vx = (p.vx / spd) * opts.baseDrift * 6;
+            p.vy = (p.vy / spd) * opts.baseDrift * 6;
+          }
+
+          // Very light damping — almost frictionless space
           p.vx *= opts.damping;
           p.vy *= opts.damping;
 
-          // Integrate
           p.x += p.vx;
           p.y += p.vy;
 
@@ -5610,40 +5690,33 @@ q1, b, q2</textarea>
           else if (p.y > H + 12) p.y = -12;
         }
 
-        /* ── Constellation lines ── */
-        const mouseNearby = mouse.inside;
+        /* ── 4. Constellation lines ── */
         for (let i = 0; i < particles.length; i++) {
           for (let j = i + 1; j < particles.length; j++) {
             const a = particles[i], b = particles[j];
             const ddx = a.x - b.x, ddy = a.y - b.y;
             const d   = Math.sqrt(ddx * ddx + ddy * ddy);
-            // Extend connection distance for particles near mouse → denser web
-            const threshold = (a.near || b.near) ? opts.connectionDist * 1.55 : opts.connectionDist;
-            if (d < threshold) {
-              const baseAlpha = (1 - d / threshold) * 0.16;
-              // Lines glow brighter when both ends are near mouse
-              const boost = (a.near && b.near) ? 2.8 : (a.near || b.near) ? 1.7 : 1;
+            if (d < opts.connectionDist) {
+              const alpha = (1 - d / opts.connectionDist) * 0.14;
               ctx.beginPath();
               ctx.moveTo(a.x, a.y);
               ctx.lineTo(b.x, b.y);
-              ctx.strokeStyle = lineColor(Math.min(baseAlpha * boost, 0.65));
-              ctx.lineWidth = (a.near && b.near) ? 1.1 : 0.65;
+              ctx.strokeStyle = lineColor(alpha);
+              ctx.lineWidth   = 0.6;
               ctx.stroke();
             }
           }
         }
 
-        /* ── Draw particles ── */
+        /* ── 5. Draw particles ── */
         for (const p of particles) {
-          const twinkle = 0.65 + 0.35 * Math.sin(frame * p.twinkleSpeed + p.twinkleOffset);
-          // Near-mouse particles brighten up
-          const nearBoost = p.near ? 1.35 : 1;
-          const opacity   = Math.min(p.baseOpacity * twinkle * nearBoost, 1);
+          const twinkle = 0.7 + 0.3 * Math.sin(frame * p.twinkleSpeed + p.twinkleOffset);
+          const opacity = Math.min(p.baseOpacity * twinkle, 1);
 
-          if (p.isGiant || p.near) {
-            const haloR = p.near ? p.size * 5.5 : p.size * 4;
+          if (p.isGiant) {
+            const haloR = p.size * 4;
             const grad  = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, haloR);
-            grad.addColorStop(0, glowColor(opacity * (p.near ? 0.75 : 0.5)));
+            grad.addColorStop(0, glowColor(opacity * 0.45));
             grad.addColorStop(1, glowColor(0));
             ctx.beginPath();
             ctx.arc(p.x, p.y, haloR, 0, Math.PI * 2);
@@ -5652,7 +5725,7 @@ q1, b, q2</textarea>
           }
 
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.near ? p.size * 1.25 : p.size, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fillStyle = starColor(opacity);
           ctx.fill();
         }
@@ -5670,15 +5743,33 @@ q1, b, q2</textarea>
         if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
       }
 
-      /* ── Mouse tracking (mapped to canvas coords) ── */
+      /* ── Mouse tracking (position only — no ripple on move) ── */
       function updateMouse(e) {
-        const r = canvas.getBoundingClientRect();
-        mouse.x      = e.clientX - r.left;
-        mouse.y      = e.clientY - r.top;
-        mouse.inside = mouse.x >= 0 && mouse.x <= W && mouse.y >= 0 && mouse.y <= H;
+        const r  = canvas.getBoundingClientRect();
+        const nx = e.clientX - r.left;
+        const ny = e.clientY - r.top;
+        mouse.inside = nx >= 0 && nx <= W && ny >= 0 && ny <= H;
+        mouse.px = mouse.x;  mouse.py = mouse.y;
+        mouse.x  = nx;       mouse.y  = ny;
       }
+
+      /* ── Click → spawn ripple burst ── */
+      function handleClick(e) {
+        const r  = canvas.getBoundingClientRect();
+        const nx = e.clientX - r.left;
+        const ny = e.clientY - r.top;
+        if (nx >= 0 && nx <= W && ny >= 0 && ny <= H) {
+          spawnRipple(nx, ny, 1.0);
+        }
+      }
+
       window.addEventListener('mousemove', updateMouse, { passive: true });
-      window.addEventListener('mouseleave', () => { mouse.inside = false; mouse.x = -9999; mouse.y = -9999; });
+      window.addEventListener('click',     handleClick);
+      window.addEventListener('mouseleave', () => {
+        mouse.inside = false;
+        mouse.x = mouse.px = -9999;
+        mouse.y = mouse.py = -9999;
+      });
 
       new ResizeObserver(() => { resize(); }).observe(hostEl);
 
@@ -5689,19 +5780,19 @@ q1, b, q2</textarea>
     }
 
     /* ════════════════════════════════════════════════════
-       INSTANCE 1 — Hero section
+       INSTANCE 1 — Hero section (runs as long as home page is active)
        ════════════════════════════════════════════════════ */
-    const heroCanvas = document.getElementById('heroParticleCanvas');
-    const heroHost   = document.querySelector('#page-home .min-h-screen');
+    const heroCanvas  = document.getElementById('heroParticleCanvas');
+    const heroHost    = document.querySelector('#page-home .min-h-screen');
     const homeSection = document.getElementById('page-home');
 
     if (heroCanvas && heroHost && homeSection) {
       const heroSys = createParticleSystem(heroCanvas, heroHost, {
-        count: 130, attractRadius: 190, attractForce: 0.3,
-        orbitStrength: 0.09, baseDrift: 0.3, damping: 0.91,
-        connectionDist: 115, isHero: true,
+        count: 130, baseDrift: 0.3, damping: 0.986,
+        connectionDist: 115, rippleForce: 0.20, isHero: true,
       });
 
+      // Start/stop only on actual page navigation — never stop while home is visible
       new MutationObserver(() => {
         if (homeSection.classList.contains('active')) heroSys.startAnim();
         else heroSys.stopAnim();
@@ -5711,19 +5802,17 @@ q1, b, q2</textarea>
     }
 
     /* ════════════════════════════════════════════════════
-       INSTANCE 2 — CTA "See the Subset Construction" section
+       INSTANCE 2 — CTA section
        ════════════════════════════════════════════════════ */
     const ctaCanvas = document.getElementById('ctaParticleCanvas');
     const ctaHost   = document.getElementById('ctaSection');
 
     if (ctaCanvas && ctaHost) {
       const ctaSys = createParticleSystem(ctaCanvas, ctaHost, {
-        count: 70, attractRadius: 160, attractForce: 0.28,
-        orbitStrength: 0.07, baseDrift: 0.22, damping: 0.93,
-        connectionDist: 100,
+        count: 70, baseDrift: 0.22, damping: 0.986,
+        connectionDist: 100, rippleForce: 0.16,
       });
 
-      // CTA is always visible on the home page — use IntersectionObserver
       const io = new IntersectionObserver(entries => {
         entries.forEach(e => {
           if (e.isIntersecting && homeSection.classList.contains('active')) ctaSys.startAnim();
@@ -5732,7 +5821,6 @@ q1, b, q2</textarea>
       }, { threshold: 0.05 });
       io.observe(ctaHost);
 
-      // Also watch page switches
       new MutationObserver(() => {
         if (!homeSection.classList.contains('active')) ctaSys.stopAnim();
       }).observe(homeSection, { attributes: true, attributeFilter: ['class'] });
