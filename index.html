@@ -924,6 +924,14 @@
       );
     }
 
+    [data-theme="dark"] .hero-halo-ring {
+      opacity: 0.18;
+      filter: blur(4px);
+    }
+    [data-theme="dark"] .hero-ambient-glow {
+      opacity: 0.45;
+    }
+
     /* ══════════════════════════════════════════
        ENHANCEMENT 2 — Noise texture over hero
        ══════════════════════════════════════════ */
@@ -1131,11 +1139,11 @@
           <div class="hidden lg:block parallax-right">
             <div class="relative hero-code-box">
               <!-- Ambient glow blob -->
-              <div class="absolute inset-0 bg-gradient-to-br from-blue-500/25 to-green-500/20 rounded-3xl blur-3xl" style="animation: heroBoxFloat 5s ease-in-out 1.6s infinite; transform-origin: center;"></div>
+              <div class="hero-ambient-glow absolute inset-0 bg-gradient-to-br from-blue-500/25 to-green-500/20 rounded-3xl blur-3xl" style="animation: heroBoxFloat 5s ease-in-out 1.6s infinite; transform-origin: center;"></div>
               <!-- Extra halo ring -->
-              <div class="absolute -inset-px rounded-3xl" style="background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(52,199,89,0.2)); filter: blur(8px); opacity: 0.6;"></div>
+              <div class="hero-halo-ring absolute -inset-px rounded-3xl" style="background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(52,199,89,0.2)); filter: blur(8px); opacity: 0.6;"></div>
 
-              <div class="relative glass rounded-3xl p-8 shadow-xl" style="border: 1px solid rgba(255,255,255,0.18);">
+              <div class="relative glass rounded-3xl p-8 shadow-xl" style="border: 1px solid rgba(255,255,255,0.18); overflow: hidden;">
                 <!-- CRT Scanline sweep -->
                 <div class="crt-scanline"></div>
                 <div class="flex items-center gap-3 mb-6">
