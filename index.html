@@ -4528,7 +4528,10 @@ q1, b, q2</textarea>
       return [...map.values()];
     }
 
-    function convDrawEdge(ctx, fromSt, toSt, label, isActive, curveOffset = 28) {
+    // convDrawEdge: draws one edge with label sitting ON the visible arc (bezier midpoint).
+    // Self-loops use an adaptive inward angle so the label never goes off-canvas.
+    function convDrawEdge(ctx, fromSt, toSt, label, isActive, curveOffset, canvas) {
+      if (curveOffset === undefined) curveOffset = 28;
       const accentCol = convCC('--accent')       || '#0071e3';
       const textCol   = convCC('--text-primary') || '#1d1d1f';
       const bgCol     = convCC('--bg-secondary') || '#fff';
@@ -4537,40 +4540,74 @@ q1, b, q2</textarea>
 
       let sX, sY, eX, eY, cX, cY;
       if (isSelf) {
-        const ang = -Math.PI / 4, sp = 0.55;
-        sX = fromSt.x + CONV_R*Math.cos(ang-sp); sY = fromSt.y + CONV_R*Math.sin(ang-sp);
-        eX = fromSt.x + CONV_R*Math.cos(ang+sp); eY = fromSt.y + CONV_R*Math.sin(ang+sp);
-        cX = fromSt.x + (CONV_R+60)*Math.cos(ang); cY = fromSt.y + (CONV_R+60)*Math.sin(ang);
+        // Adaptive self-loop: angle points TOWARD canvas center so loop/label stay on-screen
+        const cw = (canvas && canvas.width)  || 600;
+        const ch = (canvas && canvas.height) || 400;
+        const toCx = (cw / 2) - fromSt.x, toCy = (ch / 2) - fromSt.y;
+        const ang  = (Math.abs(toCx) < 2 && Math.abs(toCy) < 2)
+                   ? -Math.PI / 2
+                   : Math.atan2(toCy, toCx);
+        const sp    = 0.55;
+        const loopR = CONV_R + 52;
+        sX = fromSt.x + CONV_R * Math.cos(ang - sp);
+        sY = fromSt.y + CONV_R * Math.sin(ang - sp);
+        eX = fromSt.x + CONV_R * Math.cos(ang + sp);
+        eY = fromSt.y + CONV_R * Math.sin(ang + sp);
+        cX = fromSt.x + loopR  * Math.cos(ang);
+        cY = fromSt.y + loopR  * Math.sin(ang);
       } else {
-        const dx = toSt.x-fromSt.x, dy = toSt.y-fromSt.y;
-        const ang = Math.atan2(dy,dx), off = CONV_R+4;
-        sX = fromSt.x + off*Math.cos(ang); sY = fromSt.y + off*Math.sin(ang);
-        eX = toSt.x   - off*Math.cos(ang); eY = toSt.y   - off*Math.sin(ang);
-        const mx=(fromSt.x+toSt.x)/2, my=(fromSt.y+toSt.y)/2;
-        const perp = ang + Math.PI/2;
-        cX = mx + curveOffset*Math.cos(perp); cY = my + curveOffset*Math.sin(perp);
+        const dx = toSt.x - fromSt.x, dy = toSt.y - fromSt.y;
+        const ang = Math.atan2(dy, dx), off = CONV_R + 4;
+        sX = fromSt.x + off * Math.cos(ang); sY = fromSt.y + off * Math.sin(ang);
+        eX = toSt.x   - off * Math.cos(ang); eY = toSt.y   - off * Math.sin(ang);
+        const mx = (fromSt.x + toSt.x) / 2, my = (fromSt.y + toSt.y) / 2;
+        const perp = ang + Math.PI / 2;
+        cX = mx + curveOffset * Math.cos(perp);
+        cY = my + curveOffset * Math.sin(perp);
       }
 
+      // Draw arc
       if (isActive) { ctx.save(); ctx.shadowColor = accentCol; ctx.shadowBlur = 12; }
-      ctx.beginPath(); ctx.moveTo(sX,sY); ctx.quadraticCurveTo(cX,cY,eX,eY);
+      ctx.beginPath(); ctx.moveTo(sX, sY); ctx.quadraticCurveTo(cX, cY, eX, eY);
       ctx.strokeStyle = edgeCol; ctx.lineWidth = isActive ? 2.8 : 1.8; ctx.stroke();
       if (isActive) ctx.restore();
 
-      const ang2 = Math.atan2(eY-cY, eX-cX);
-      ctx.beginPath(); ctx.moveTo(eX,eY);
-      ctx.lineTo(eX-9*Math.cos(ang2-Math.PI/6), eY-9*Math.sin(ang2-Math.PI/6));
-      ctx.lineTo(eX-9*Math.cos(ang2+Math.PI/6), eY-9*Math.sin(ang2+Math.PI/6));
+      // Arrowhead
+      const ang2 = Math.atan2(eY - cY, eX - cX);
+      ctx.beginPath(); ctx.moveTo(eX, eY);
+      ctx.lineTo(eX - 9*Math.cos(ang2 - Math.PI/6), eY - 9*Math.sin(ang2 - Math.PI/6));
+      ctx.lineTo(eX - 9*Math.cos(ang2 + Math.PI/6), eY - 9*Math.sin(ang2 + Math.PI/6));
       ctx.closePath(); ctx.fillStyle = edgeCol; ctx.fill();
 
-      // label pill
-      const lw = Math.max(24, label.length * 7 + 12);
+      // Label position = Bezier midpoint at t=0.5: B(0.5) = 0.25*P0 + 0.5*P1 + 0.25*P2
+      // This places the label right ON the visible arc, not floating at the control point
+      let lX = 0.25*sX + 0.5*cX + 0.25*eX;
+      let lY = 0.25*sY + 0.5*cY + 0.25*eY;
+
+      // Clamp label center to canvas bounds so it never goes off-screen
+      const lw = Math.max(28, label.length * 7 + 14);
+      const lh = 20, pad = 4;
+      if (canvas) {
+        lX = Math.max(lw/2 + pad, Math.min(canvas.width  - lw/2 - pad, lX));
+        lY = Math.max(lh/2 + pad, Math.min(canvas.height - lh/2 - pad, lY));
+      }
+
+      // Pill background + thin border
       ctx.fillStyle = bgCol;
-      ctx.beginPath(); ctx.roundRect(cX - lw/2, cY - 10, lw, 20, 5);
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(lX - lw/2, lY - lh/2, lw, lh, 5);
+      else               ctx.rect(lX - lw/2, lY - lh/2, lw, lh);
       ctx.fill();
-      ctx.fillStyle = textCol;
-      ctx.font = 'bold 12px JetBrains Mono, monospace';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, cX, cY);
+      ctx.strokeStyle = isActive ? accentCol + '88' : (convCC('--border') || 'rgba(0,0,0,0.12)');
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+
+      // Label text
+      ctx.fillStyle    = isActive ? accentCol : textCol;
+      ctx.font         = 'bold 12px JetBrains Mono, monospace';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, lX, lY);
     }
 
     /* render NFA canvas */
@@ -4604,7 +4641,7 @@ q1, b, q2</textarea>
         const offset = g.from===g.to ? 0 : (isBi ? (seenN===1?30:-30) : 28);
         const label  = g.symbols.join(',');
         const isAct  = hiTrans.some(at => g.symbols.includes(at.symbol) && at.from===g.from && at.to===g.to);
-        convDrawEdge(ctx, fromSt, toSt, label, isAct, offset);
+        convDrawEdge(ctx, fromSt, toSt, label, isAct, offset, canvas);
       }
 
       for (const state of conv.nfaStates) {
@@ -4655,7 +4692,7 @@ q1, b, q2</textarea>
         const sn   = pairSeen[k] = (pairSeen[k]||0)+1;
         const off  = g.from===g.to ? 0 : (isBi?(sn===1?30:-30):28);
         const isNewEdge = newTrans && g.from===newTrans.from && g.to===newTrans.to && g.symbols.includes(newTrans.symbol);
-        convDrawEdge(ctx, fromSt, toSt, g.symbols.join(','), !!isNewEdge, off);
+        convDrawEdge(ctx, fromSt, toSt, g.symbols.join(','), !!isNewEdge, off, canvas);
       }
 
       for (const st of stateObjs) {
