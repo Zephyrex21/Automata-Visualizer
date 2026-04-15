@@ -821,6 +821,66 @@
       border: 1px solid var(--border);
     }
 
+    /* ─── Hero Code Box & Heading Animations ─── */
+    @keyframes heroBoxEntrance {
+      0%   { opacity: 0; transform: perspective(1200px) rotateY(-18deg) translateX(100px) scale(0.82); }
+      55%  { transform: perspective(1200px) rotateY(4deg)  translateX(-10px) scale(1.03); }
+      100% { opacity: 1; transform: perspective(1200px) rotateY(0deg)  translateX(0)    scale(1); }
+    }
+    @keyframes heroBoxFloat {
+      0%, 100% { transform: translateY(0px);   filter: drop-shadow(0 20px 40px rgba(0,113,227,0.14)); }
+      50%       { transform: translateY(-12px); filter: drop-shadow(0 38px 70px rgba(0,113,227,0.28)); }
+    }
+    @keyframes codeScanLine {
+      from { clip-path: inset(0 100% 0 0); opacity: 0; }
+      8%   { opacity: 1; }
+      to   { clip-path: inset(0 0%   0 0); opacity: 1; }
+    }
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+    @keyframes gradientTextFlow {
+      0%   { background-position: 0%   50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0%   50%; }
+    }
+    @keyframes borderGlow {
+      0%, 100% { box-shadow: 0 0 0 1px rgba(0,113,227,0.15), 0 20px 60px rgba(0,113,227,0.10); }
+      50%       { box-shadow: 0 0 0 1px rgba(52,199,89,0.25), 0 20px 60px rgba(52,199,89,0.14); }
+    }
+
+    .hero-code-box {
+      animation:
+        heroBoxEntrance 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both,
+        heroBoxFloat    5s ease-in-out 1.6s infinite,
+        borderGlow      4s ease-in-out 1.6s infinite;
+    }
+    .code-line {
+      white-space: pre;
+      display: block;
+      animation: codeScanLine 0.38s ease-out both;
+    }
+    .code-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background: var(--accent);
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      border-radius: 1px;
+      animation: cursorBlink 0.9s step-end infinite;
+    }
+    .gradient-text-animated {
+      background: linear-gradient(90deg, #3b82f6, #60a5fa, #34d399, #10b981, #818cf8, #3b82f6);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      animation: gradientTextFlow 4s ease infinite;
+    }
+
     /* ── Send-to-Simulator banner in summary ── */
     .conv-action-banner {
       margin-top: 20px;
@@ -943,7 +1003,7 @@
             </div>
             <h1 class="text-5xl lg:text-7xl font-bold leading-tight mb-6 animate-fade-in-up stagger-2" style="letter-spacing: -0.03em;">
               NFA to DFA<br>
-              <span class="bg-gradient-to-r from-blue-500 via-blue-600 to-green-500 bg-clip-text text-transparent">Visual Converter</span>
+              <span class="gradient-text-animated">Visual Converter</span>
             </h1>
             <p class="text-xl text-text-secondary mb-10 max-w-lg animate-fade-in-up stagger-3" style="color: var(--text-secondary);">
               Master the <strong style="color:var(--text-primary);">subset construction algorithm</strong> through interactive step-by-step visualization. Watch every ε-closure, move, and DFA state form in real time.
@@ -973,36 +1033,46 @@
               </button>
             </div>
           </div>
-          <div class="hidden lg:block animate-fade-in-up stagger-3">
-            <div class="relative">
-              <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-green-500/20 rounded-3xl blur-3xl"></div>
-              <div class="relative glass rounded-3xl p-8 shadow-xl">
+          <div class="hidden lg:block">
+            <div class="relative hero-code-box">
+              <!-- Ambient glow blob -->
+              <div class="absolute inset-0 bg-gradient-to-br from-blue-500/25 to-green-500/20 rounded-3xl blur-3xl" style="animation: heroBoxFloat 5s ease-in-out 1.6s infinite; transform-origin: center;"></div>
+              <!-- Extra halo ring -->
+              <div class="absolute -inset-px rounded-3xl" style="background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(52,199,89,0.2)); filter: blur(8px); opacity: 0.6;"></div>
+
+              <div class="relative glass rounded-3xl p-8 shadow-xl" style="border: 1px solid rgba(255,255,255,0.18);">
+                <!-- Window chrome dots -->
                 <div class="flex items-center gap-3 mb-6">
-                  <div class="w-3 h-3 rounded-full bg-red-400"></div>
-                  <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
-                  <div class="w-3 h-3 rounded-full bg-green-400"></div>
-                  <span class="ml-4 text-sm font-medium" style="color: var(--text-tertiary);">subset-construction.js</span>
+                  <div class="w-3 h-3 rounded-full bg-red-400" style="box-shadow: 0 0 6px rgba(248,113,113,0.6);"></div>
+                  <div class="w-3 h-3 rounded-full bg-yellow-400" style="box-shadow: 0 0 6px rgba(251,191,36,0.6);"></div>
+                  <div class="w-3 h-3 rounded-full bg-green-400" style="box-shadow: 0 0 6px rgba(74,222,128,0.6);"></div>
+                  <div class="flex-1 mx-2 h-5 rounded-md" style="background: var(--bg-tertiary);"></div>
+                  <span class="text-xs font-medium px-3 py-1 rounded-lg" style="color: var(--text-tertiary); background: var(--bg-tertiary);">subset-construction.js</span>
                 </div>
-                <pre class="font-mono text-sm leading-relaxed overflow-hidden"><code style="color: var(--text-secondary);"><span style="color: #ff6b6b;">function</span> <span style="color: var(--accent);">subsetConstruction</span>(nfa) {
-  <span style="color: var(--text-tertiary);">// Step 1: ε-closure of start state</span>
-  <span style="color: #ff6b6b;">const</span> q0 = <span style="color: var(--accent);">εClosure</span>({nfa.start});
-  <span style="color: #ff6b6b;">const</span> worklist = [q0];
 
-  <span style="color: #ff6b6b;">while</span> (worklist.length) {
-    <span style="color: #ff6b6b;">const</span> S = worklist.<span style="color: var(--accent);">shift</span>();
-
-    <span style="color: #ff6b6b;">for</span> (<span style="color: #ff6b6b;">const</span> a <span style="color: #ff6b6b;">of</span> nfa.alphabet) {
-      <span style="color: var(--text-tertiary);">// Step 2: move then ε-closure</span>
-      <span style="color: #ff6b6b;">const</span> T = <span style="color: var(--accent);">εClosure</span>(
-        <span style="color: var(--accent);">move</span>(S, a)
-      );
-      <span style="color: #ff6b6b;">if</span> (!dfa.<span style="color: var(--accent);">has</span>(T))
-        worklist.<span style="color: var(--accent);">push</span>(T);
-      dfa.<span style="color: var(--accent);">addTransition</span>(S, a, T);
-    }
-  }
-  <span style="color: #ff6b6b;">return</span> dfa;
-}</code></pre>
+                <!-- Animated code lines -->
+                <div class="font-mono text-sm leading-relaxed" style="color: var(--text-secondary); overflow: hidden;">
+                  <span class="code-line" style="animation-delay: 1.00s;"><span style="color:#ff6b6b;">function</span> <span style="color:var(--accent);">subsetConstruction</span>(nfa) {</span>
+                  <span class="code-line" style="animation-delay: 1.14s;">  <span style="color:var(--text-tertiary);">// Step 1: ε-closure of start</span></span>
+                  <span class="code-line" style="animation-delay: 1.28s;">  <span style="color:#ff6b6b;">const</span> q0 = <span style="color:var(--accent);">εClosure</span>({nfa.start});</span>
+                  <span class="code-line" style="animation-delay: 1.42s;">  <span style="color:#ff6b6b;">const</span> worklist = [q0];</span>
+                  <span class="code-line" style="animation-delay: 1.50s;"> </span>
+                  <span class="code-line" style="animation-delay: 1.56s;">  <span style="color:#ff6b6b;">while</span> (worklist.<span style="color:var(--accent);">length</span>) {</span>
+                  <span class="code-line" style="animation-delay: 1.70s;">    <span style="color:#ff6b6b;">const</span> S = worklist.<span style="color:var(--accent);">shift</span>();</span>
+                  <span class="code-line" style="animation-delay: 1.78s;"> </span>
+                  <span class="code-line" style="animation-delay: 1.84s;">    <span style="color:#ff6b6b;">for</span> (<span style="color:#ff6b6b;">const</span> a <span style="color:#ff6b6b;">of</span> nfa.alphabet) {</span>
+                  <span class="code-line" style="animation-delay: 1.98s;">      <span style="color:var(--text-tertiary);">// move then ε-closure</span></span>
+                  <span class="code-line" style="animation-delay: 2.12s;">      <span style="color:#ff6b6b;">const</span> T = <span style="color:var(--accent);">εClosure</span>(</span>
+                  <span class="code-line" style="animation-delay: 2.26s;">        <span style="color:var(--accent);">move</span>(S, a)</span>
+                  <span class="code-line" style="animation-delay: 2.40s;">      );</span>
+                  <span class="code-line" style="animation-delay: 2.54s;">      <span style="color:#ff6b6b;">if</span> (!dfa.<span style="color:var(--accent);">has</span>(T))</span>
+                  <span class="code-line" style="animation-delay: 2.68s;">        worklist.<span style="color:var(--accent);">push</span>(T);</span>
+                  <span class="code-line" style="animation-delay: 2.82s;">      dfa.<span style="color:var(--accent);">addTransition</span>(S, a, T);</span>
+                  <span class="code-line" style="animation-delay: 2.96s;">    }</span>
+                  <span class="code-line" style="animation-delay: 3.10s;">  }</span>
+                  <span class="code-line" style="animation-delay: 3.24s;">  <span style="color:#ff6b6b;">return</span> dfa;<span class="code-cursor" style="animation-delay: 3.62s;"></span></span>
+                  <span class="code-line" style="animation-delay: 3.38s;">}</span>
+                </div>
               </div>
             </div>
           </div>
