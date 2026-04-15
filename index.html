@@ -195,6 +195,10 @@
       border-bottom: 1px solid var(--border);
       box-shadow: var(--shadow-sm);
     }
+    [data-theme="dark"] .navbar.scrolled {
+      border-bottom-color: rgba(255,255,255,0.04);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.5);
+    }
 
     .nav-link {
       color: var(--text-secondary);
@@ -881,6 +885,95 @@
       animation: gradientTextFlow 4s ease infinite;
     }
 
+    /* ══════════════════════════════════════════
+       ENHANCEMENT 1 — CRT Scanline on code box
+       ══════════════════════════════════════════ */
+    @keyframes scanSweep {
+      0%   { top: -8%; opacity: 0; }
+      5%   { opacity: 1; }
+      92%  { opacity: 0.7; }
+      100% { top: 108%; opacity: 0; }
+    }
+    .crt-scanline {
+      position: absolute;
+      left: 0; right: 0;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0,113,227,0.18) 15%,
+        rgba(100,210,255,0.55) 50%,
+        rgba(0,113,227,0.18) 85%,
+        transparent 100%
+      );
+      pointer-events: none;
+      z-index: 20;
+      animation: scanSweep 3.8s linear 4.2s infinite;
+      filter: blur(1px);
+      top: -8%;
+    }
+    [data-theme="dark"] .crt-scanline {
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(10,132,255,0.15) 15%,
+        rgba(130,220,255,0.6) 50%,
+        rgba(10,132,255,0.15) 85%,
+        transparent 100%
+      );
+    }
+
+    /* ══════════════════════════════════════════
+       ENHANCEMENT 2 — Noise texture over hero
+       ══════════════════════════════════════════ */
+    .hero-noise {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.038;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 300px 300px;
+    }
+    [data-theme="dark"] .hero-noise { opacity: 0.055; }
+
+    /* ══════════════════════════════════════════
+       ENHANCEMENT 3 — Navbar logo pulse
+       ══════════════════════════════════════════ */
+    @keyframes logoPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.7), 0 0 0 0 rgba(52,199,89,0.4); }
+      40%  { box-shadow: 0 0 0 8px rgba(59,130,246,0.15), 0 0 20px 4px rgba(52,199,89,0.2); }
+      70%  { box-shadow: 0 0 0 14px rgba(59,130,246,0), 0 0 30px 8px rgba(52,199,89,0.1); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0), 0 0 0 0 rgba(52,199,89,0); }
+    }
+    .logo-pulse {
+      animation: logoPulse 2.4s cubic-bezier(0.4,0,0.6,1) 0.6s 3;
+    }
+
+    /* ══════════════════════════════════════════
+       ENHANCEMENT 4 — Counter badge
+       ══════════════════════════════════════════ */
+    @keyframes countBump {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.18); color: var(--accent); }
+      100% { transform: scale(1); }
+    }
+    .counter-num {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      display: inline-block;
+      transition: color 0.2s;
+    }
+    .counter-num.bump { animation: countBump 0.22s ease; }
+
+    /* ══════════════════════════════════════════
+       ENHANCEMENT 5 — Parallax wrappers
+       ══════════════════════════════════════════ */
+    .parallax-left  { will-change: transform; }
+    .parallax-right { will-change: transform; }
+
     /* ── Send-to-Simulator banner in summary ── */
     .conv-action-banner {
       margin-top: 20px;
@@ -910,7 +1003,7 @@
           </svg>
         </button>
         <a href="#" class="flex items-center gap-3" onclick="showPage('home')">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-green-400 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-green-400 flex items-center justify-center logo-pulse">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
               <circle cx="6" cy="12" r="3"></circle>
               <circle cx="18" cy="6" r="3"></circle>
@@ -962,6 +1055,8 @@
   <!-- Home Page -->
   <section id="page-home" class="page-section active">
     <div class="min-h-screen hero-gradient relative overflow-hidden pt-24">
+      <!-- Noise grain texture -->
+      <div class="hero-noise"></div>
       <canvas id="heroParticleCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <div class="absolute top-20 right-10 w-96 h-96 rounded-full bg-gradient-to-br from-blue-200/30 to-transparent blur-3xl animate-float"></div>
@@ -996,10 +1091,10 @@
 
       <div class="max-w-7xl mx-auto px-6 py-20 lg:py-32 relative z-10">
         <div class="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-light text-accent text-sm font-medium mb-8 animate-fade-in-up stagger-1">
+          <div class="parallax-left">
+            <div id="heroPillBadge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-light text-accent text-sm font-medium mb-8 animate-fade-in-up stagger-1" style="background: var(--accent-light); color: var(--accent);">
               <span class="w-2 h-2 rounded-full bg-current animate-pulse"></span>
-              NFA → DFA Conversion · Subset Construction
+              NFA → DFA Conversion ·&nbsp;<span id="convCounter" class="counter-num">0</span>&nbsp;conversions today
             </div>
             <h1 class="text-5xl lg:text-7xl font-bold leading-tight mb-6 animate-fade-in-up stagger-2" style="letter-spacing: -0.03em;">
               NFA to DFA<br>
@@ -1033,7 +1128,7 @@
               </button>
             </div>
           </div>
-          <div class="hidden lg:block">
+          <div class="hidden lg:block parallax-right">
             <div class="relative hero-code-box">
               <!-- Ambient glow blob -->
               <div class="absolute inset-0 bg-gradient-to-br from-blue-500/25 to-green-500/20 rounded-3xl blur-3xl" style="animation: heroBoxFloat 5s ease-in-out 1.6s infinite; transform-origin: center;"></div>
@@ -1041,7 +1136,8 @@
               <div class="absolute -inset-px rounded-3xl" style="background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(52,199,89,0.2)); filter: blur(8px); opacity: 0.6;"></div>
 
               <div class="relative glass rounded-3xl p-8 shadow-xl" style="border: 1px solid rgba(255,255,255,0.18);">
-                <!-- Window chrome dots -->
+                <!-- CRT Scanline sweep -->
+                <div class="crt-scanline"></div>
                 <div class="flex items-center gap-3 mb-6">
                   <div class="w-3 h-3 rounded-full bg-red-400" style="box-shadow: 0 0 6px rgba(248,113,113,0.6);"></div>
                   <div class="w-3 h-3 rounded-full bg-yellow-400" style="box-shadow: 0 0 6px rgba(251,191,36,0.6);"></div>
@@ -1166,8 +1262,9 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="py-24 lg:py-32">
-      <div class="max-w-4xl mx-auto px-6 text-center reveal-section">
+    <section class="py-24 lg:py-32" id="ctaSection" style="position:relative;overflow:hidden;">
+      <canvas id="ctaParticleCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+      <div class="max-w-4xl mx-auto px-6 text-center reveal-section" style="position:relative;z-index:1;">
         <h2 class="text-4xl lg:text-5xl font-bold mb-6">See the Subset Construction in Action</h2>
         <p class="text-xl mb-10" style="color: var(--text-secondary);">Pick a preloaded NFA, press Convert, and step through every stage of the algorithm — at your own pace.</p>
         <div class="flex flex-wrap gap-4 justify-center">
@@ -5350,208 +5447,361 @@ q1, b, q2</textarea>
   </script>
 
   <!-- ============================================================
-       HERO SPACE PARTICLE SYSTEM
+       PARTICLE SYSTEM v2 — Realistic physics, attraction clustering
+       Shared engine used by: Hero + CTA sections
        ============================================================ -->
   <script>
   (function () {
-    const canvas  = document.getElementById('heroParticleCanvas');
-    const hero    = document.querySelector('#page-home .min-h-screen');
-    const homeSection = document.getElementById('page-home');
-    if (!canvas || !hero || !homeSection) return;
 
-    const ctx = canvas.getContext('2d');
-    let W = 0, H = 0;
-    let mouse = { x: -9999, y: -9999 };
-    let particles = [];
-    let rafId = null;
-    let running = false;
-    let frame = 0;
+    /* ════════════════════════════════════════════════════
+       SHARED PARTICLE ENGINE FACTORY
+       ════════════════════════════════════════════════════ */
+    function createParticleSystem(canvas, hostEl, opts) {
+      opts = Object.assign({
+        count:         110,
+        attractRadius: 180,
+        attractForce:  0.32,   // gravity-like pull toward mouse
+        orbitStrength: 0.08,   // tangential nudge → orbital feel
+        baseDrift:     0.28,   // natural idle speed
+        damping:       0.92,
+        connectionDist:120,
+        isHero:        false,
+      }, opts);
 
-    /* ── Config ── */
-    const STAR_COUNT      = 130;
-    const REPEL_RADIUS    = 120;
-    const REPEL_FORCE     = 7;
-    const SPRING          = 0.03;
-    const DAMPING         = 0.85;
-    const DRIFT_SPEED     = 0.35;  // base drift velocity
-    const CONNECTION_DIST = 110;   // px for constellation lines
+      const ctx = canvas.getContext('2d');
+      let W = 0, H = 0;
+      let mouse = { x: -9999, y: -9999, inside: false };
+      let particles = [];
+      let rafId = null;
+      let running = false;
+      let frame = 0;
 
-    /* ── Theme-aware colours ── */
-    function isDark() {
-      return document.documentElement.getAttribute('data-theme') === 'dark';
-    }
-    function starColor(alpha) {
-      return isDark()
-        ? `rgba(180, 210, 255, ${alpha})`   // cool white-blue stars
-        : `rgba(15,  60,  160, ${alpha})`;  // deep navy — visible on light bg
-    }
-    function lineColor(alpha) {
-      return isDark()
-        ? `rgba(140, 190, 255, ${alpha})`
-        : `rgba(20,  80,  200, ${alpha})`;
-    }
-    function glowColor(alpha) {
-      return isDark()
-        ? `rgba(120, 180, 255, ${alpha})`
-        : `rgba(0,   90,  220, ${alpha})`;
-    }
-
-    /* ── Spawn ── */
-    function makeParticle() {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = (0.1 + Math.random() * 0.9) * DRIFT_SPEED;
-      const size  = 0.8 + Math.random() * 2.4;
-      const ox = Math.random() * W;
-      const oy = Math.random() * H;
-      return {
-        x: ox, y: oy,
-        ox, oy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size,
-        baseOpacity: 0.3 + Math.random() * 0.6,
-        twinkleOffset: Math.random() * Math.PI * 2,
-        twinkleSpeed:  0.015 + Math.random() * 0.025,
-        isGiant: size > 2.8,   // larger ones get a glow halo
-      };
-    }
-
-    function spawnAll() {
-      particles = Array.from({ length: STAR_COUNT }, makeParticle);
-    }
-
-    /* ── Resize ── */
-    function resize() {
-      W = canvas.width  = hero.offsetWidth;
-      H = canvas.height = hero.offsetHeight;
-      // keep particles within new bounds
-      particles.forEach(p => {
-        p.x  = Math.min(p.x,  W);
-        p.y  = Math.min(p.y,  H);
-        p.ox = Math.min(p.ox, W);
-        p.oy = Math.min(p.oy, H);
-      });
-    }
-
-    /* ── Draw ── */
-    function tick() {
-      frame++;
-      ctx.clearRect(0, 0, W, H);
-
-      const dark = isDark();
-
-      /* ── update & collect positions ── */
-      for (const p of particles) {
-        /* mouse repulsion */
-        const dx   = p.x - mouse.x;
-        const dy   = p.y - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < REPEL_RADIUS && dist > 0) {
-          const f = (1 - dist / REPEL_RADIUS) * REPEL_FORCE;
-          p.vx += (dx / dist) * f;
-          p.vy += (dy / dist) * f;
-        }
-
-        /* gentle drift — keep the natural velocity alive */
-        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        const angle = Math.atan2(p.vy, p.vx);
-        const target = DRIFT_SPEED * (0.5 + p.baseOpacity * 0.5);
-        if (speed < target) {
-          p.vx += Math.cos(angle || p.twinkleOffset) * 0.02;
-          p.vy += Math.sin(angle || p.twinkleOffset) * 0.02;
-        }
-
-        /* damping */
-        p.vx *= DAMPING;
-        p.vy *= DAMPING;
-
-        /* integrate */
-        p.x += p.vx;
-        p.y += p.vy;
-
-        /* wrap at edges — seamless space feel */
-        if (p.x < -10) p.x = W + 10;
-        if (p.x > W + 10) p.x = -10;
-        if (p.y < -10) p.y = H + 10;
-        if (p.y > H + 10) p.y = -10;
+      /* ── Theme colours ── */
+      function isDark() {
+        return document.documentElement.getAttribute('data-theme') === 'dark';
+      }
+      function starColor(a) {
+        return isDark() ? `rgba(180,210,255,${a})` : `rgba(15,60,160,${a})`;
+      }
+      function lineColor(a) {
+        return isDark() ? `rgba(140,190,255,${a})` : `rgba(20,80,200,${a})`;
+      }
+      function glowColor(a) {
+        return isDark() ? `rgba(120,180,255,${a})` : `rgba(0,90,220,${a})`;
       }
 
-      /* ── draw constellation lines between nearby pairs ── */
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i], b = particles[j];
-          const dx = a.x - b.x, dy = a.y - b.y;
-          const d  = Math.sqrt(dx * dx + dy * dy);
-          if (d < CONNECTION_DIST) {
-            const alpha = (1 - d / CONNECTION_DIST) * 0.18;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = lineColor(alpha);
-            ctx.lineWidth = 0.7;
-            ctx.stroke();
+      /* ── Spawn ── */
+      function makeParticle() {
+        // two independent sine-wave drift frequencies per axis → organic Lissajous paths
+        const freqX = 0.004 + Math.random() * 0.008;
+        const freqY = 0.003 + Math.random() * 0.009;
+        const phaseX = Math.random() * Math.PI * 2;
+        const phaseY = Math.random() * Math.PI * 2;
+        const ampX   = 0.15 + Math.random() * 0.55;
+        const ampY   = 0.15 + Math.random() * 0.55;
+        const size   = 0.7 + Math.random() * 2.6;
+        return {
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: (Math.random() - 0.5) * opts.baseDrift * 2,
+          vy: (Math.random() - 0.5) * opts.baseDrift * 2,
+          freqX, freqY, phaseX, phaseY, ampX, ampY,
+          size,
+          baseOpacity:   0.28 + Math.random() * 0.6,
+          twinkleOffset: Math.random() * Math.PI * 2,
+          twinkleSpeed:  0.012 + Math.random() * 0.022,
+          isGiant: size > 2.8,
+          near: false,   // true when inside attract radius
+        };
+      }
+
+      function spawnAll() {
+        particles = Array.from({ length: opts.count }, makeParticle);
+      }
+
+      /* ── Resize ── */
+      function resize() {
+        W = canvas.width  = hostEl.offsetWidth;
+        H = canvas.height = hostEl.offsetHeight;
+      }
+
+      /* ── Physics tick ── */
+      function tick() {
+        frame++;
+        ctx.clearRect(0, 0, W, H);
+
+        for (const p of particles) {
+          const dx   = mouse.x - p.x;
+          const dy   = mouse.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+
+          if (mouse.inside && dist < opts.attractRadius) {
+            p.near = true;
+            // Gravity-well attraction (stronger up close, softer at edge)
+            const falloff = 1 - (dist / opts.attractRadius);
+            const strength = opts.attractForce * falloff * falloff;
+
+            // Radial pull toward mouse
+            p.vx += (dx / dist) * strength;
+            p.vy += (dy / dist) * strength;
+
+            // Tangential orbital nudge (perpendicular to radial)
+            // Cross product gives clockwise orbit
+            p.vx += (-dy / dist) * opts.orbitStrength * falloff;
+            p.vy +=  (dx / dist) * opts.orbitStrength * falloff;
+
+            // Speed cap inside cluster — prevents wild teleporting
+            const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+            const maxSpd = 2.8 + (1 - falloff) * 1.5;
+            if (spd > maxSpd) {
+              p.vx = (p.vx / spd) * maxSpd;
+              p.vy = (p.vy / spd) * maxSpd;
+            }
+          } else {
+            p.near = false;
+            // Organic idle drift: sine-wave acceleration on each axis
+            // Creates gentle Lissajous-style paths instead of straight lines
+            p.vx += Math.sin(frame * p.freqX + p.phaseX) * p.ampX * 0.012;
+            p.vy += Math.cos(frame * p.freqY + p.phaseY) * p.ampY * 0.012;
+
+            // Soft speed floor — particles never completely stop
+            const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+            if (spd < opts.baseDrift * 0.4) {
+              p.vx += Math.sin(frame * p.freqX) * 0.04;
+              p.vy += Math.cos(frame * p.freqY) * 0.04;
+            }
+            // Soft speed cap for idle
+            if (spd > opts.baseDrift * 3.5) {
+              p.vx *= opts.baseDrift * 3.5 / spd;
+              p.vy *= opts.baseDrift * 3.5 / spd;
+            }
+          }
+
+          // Universal damping
+          p.vx *= opts.damping;
+          p.vy *= opts.damping;
+
+          // Integrate
+          p.x += p.vx;
+          p.y += p.vy;
+
+          // Seamless edge wrap
+          if (p.x < -12) p.x = W + 12;
+          else if (p.x > W + 12) p.x = -12;
+          if (p.y < -12) p.y = H + 12;
+          else if (p.y > H + 12) p.y = -12;
+        }
+
+        /* ── Constellation lines ── */
+        const mouseNearby = mouse.inside;
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const a = particles[i], b = particles[j];
+            const ddx = a.x - b.x, ddy = a.y - b.y;
+            const d   = Math.sqrt(ddx * ddx + ddy * ddy);
+            // Extend connection distance for particles near mouse → denser web
+            const threshold = (a.near || b.near) ? opts.connectionDist * 1.55 : opts.connectionDist;
+            if (d < threshold) {
+              const baseAlpha = (1 - d / threshold) * 0.16;
+              // Lines glow brighter when both ends are near mouse
+              const boost = (a.near && b.near) ? 2.8 : (a.near || b.near) ? 1.7 : 1;
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.strokeStyle = lineColor(Math.min(baseAlpha * boost, 0.65));
+              ctx.lineWidth = (a.near && b.near) ? 1.1 : 0.65;
+              ctx.stroke();
+            }
           }
         }
-      }
 
-      /* ── draw stars ── */
-      for (const p of particles) {
-        const twinkle = 0.6 + 0.4 * Math.sin(frame * p.twinkleSpeed + p.twinkleOffset);
-        const opacity = p.baseOpacity * twinkle;
+        /* ── Draw particles ── */
+        for (const p of particles) {
+          const twinkle = 0.65 + 0.35 * Math.sin(frame * p.twinkleSpeed + p.twinkleOffset);
+          // Near-mouse particles brighten up
+          const nearBoost = p.near ? 1.35 : 1;
+          const opacity   = Math.min(p.baseOpacity * twinkle * nearBoost, 1);
 
-        /* halo glow for larger stars */
-        if (p.isGiant) {
-          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
-          grad.addColorStop(0, glowColor(opacity * 0.6));
-          grad.addColorStop(1, glowColor(0));
+          if (p.isGiant || p.near) {
+            const haloR = p.near ? p.size * 5.5 : p.size * 4;
+            const grad  = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, haloR);
+            grad.addColorStop(0, glowColor(opacity * (p.near ? 0.75 : 0.5)));
+            grad.addColorStop(1, glowColor(0));
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, haloR, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+          }
+
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
-          ctx.fillStyle = grad;
+          ctx.arc(p.x, p.y, p.near ? p.size * 1.25 : p.size, 0, Math.PI * 2);
+          ctx.fillStyle = starColor(opacity);
           ctx.fill();
         }
 
-        /* core dot */
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = starColor(opacity);
-        ctx.fill();
+        if (running) rafId = requestAnimationFrame(tick);
       }
 
-      if (running) rafId = requestAnimationFrame(tick);
+      function startAnim() {
+        if (running) return;
+        running = true;
+        rafId = requestAnimationFrame(tick);
+      }
+      function stopAnim() {
+        running = false;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      }
+
+      /* ── Mouse tracking (mapped to canvas coords) ── */
+      function updateMouse(e) {
+        const r = canvas.getBoundingClientRect();
+        mouse.x      = e.clientX - r.left;
+        mouse.y      = e.clientY - r.top;
+        mouse.inside = mouse.x >= 0 && mouse.x <= W && mouse.y >= 0 && mouse.y <= H;
+      }
+      window.addEventListener('mousemove', updateMouse, { passive: true });
+      window.addEventListener('mouseleave', () => { mouse.inside = false; mouse.x = -9999; mouse.y = -9999; });
+
+      new ResizeObserver(() => { resize(); }).observe(hostEl);
+
+      resize();
+      spawnAll();
+
+      return { startAnim, stopAnim };
     }
 
-    /* ── start / stop ── */
-    function startAnim() {
-      if (running) return;
-      running = true;
-      rafId = requestAnimationFrame(tick);
+    /* ════════════════════════════════════════════════════
+       INSTANCE 1 — Hero section
+       ════════════════════════════════════════════════════ */
+    const heroCanvas = document.getElementById('heroParticleCanvas');
+    const heroHost   = document.querySelector('#page-home .min-h-screen');
+    const homeSection = document.getElementById('page-home');
+
+    if (heroCanvas && heroHost && homeSection) {
+      const heroSys = createParticleSystem(heroCanvas, heroHost, {
+        count: 130, attractRadius: 190, attractForce: 0.3,
+        orbitStrength: 0.09, baseDrift: 0.3, damping: 0.91,
+        connectionDist: 115, isHero: true,
+      });
+
+      new MutationObserver(() => {
+        if (homeSection.classList.contains('active')) heroSys.startAnim();
+        else heroSys.stopAnim();
+      }).observe(homeSection, { attributes: true, attributeFilter: ['class'] });
+
+      if (homeSection.classList.contains('active')) heroSys.startAnim();
     }
-    function stopAnim() {
-      running = false;
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    /* ════════════════════════════════════════════════════
+       INSTANCE 2 — CTA "See the Subset Construction" section
+       ════════════════════════════════════════════════════ */
+    const ctaCanvas = document.getElementById('ctaParticleCanvas');
+    const ctaHost   = document.getElementById('ctaSection');
+
+    if (ctaCanvas && ctaHost) {
+      const ctaSys = createParticleSystem(ctaCanvas, ctaHost, {
+        count: 70, attractRadius: 160, attractForce: 0.28,
+        orbitStrength: 0.07, baseDrift: 0.22, damping: 0.93,
+        connectionDist: 100,
+      });
+
+      // CTA is always visible on the home page — use IntersectionObserver
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting && homeSection.classList.contains('active')) ctaSys.startAnim();
+          else ctaSys.stopAnim();
+        });
+      }, { threshold: 0.05 });
+      io.observe(ctaHost);
+
+      // Also watch page switches
+      new MutationObserver(() => {
+        if (!homeSection.classList.contains('active')) ctaSys.stopAnim();
+      }).observe(homeSection, { attributes: true, attributeFilter: ['class'] });
     }
 
-    /* ── mouse ── */
-    window.addEventListener('mousemove', e => {
-      const r = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - r.left;
-      mouse.y = e.clientY - r.top;
-    });
-    window.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+  })();
+  </script>
+  <!-- ============================================================
+       UI ENHANCEMENTS: Counter · Parallax · (CRT + Noise are CSS-only)
+       ============================================================ -->
+  <script>
+  (function () {
 
-    /* ── watch home page visibility ── */
-    new MutationObserver(() => {
-      if (homeSection.classList.contains('active')) { resize(); startAnim(); }
-      else stopAnim();
-    }).observe(homeSection, { attributes: true, attributeFilter: ['class'] });
+    /* ── 1. Animated pill counter ── */
+    const counterEl = document.getElementById('convCounter');
+    if (counterEl) {
+      // Seed a believable "today" number: 120-179
+      const target = 120 + Math.floor(Math.random() * 60);
+      let current = 0;
+      const duration = 1800; // ms
+      const startDelay = 900; // wait for page entrance animations
+      let startTime = null;
 
-    /* ── resize ── */
-    new ResizeObserver(resize).observe(hero);
+      function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
-    /* ── boot ── */
-    resize();
-    spawnAll();
-    if (homeSection.classList.contains('active')) startAnim();
+      function animateCounter(ts) {
+        if (!startTime) startTime = ts;
+        const elapsed = ts - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = Math.round(easeOut(progress) * target);
+        if (value !== current) {
+          current = value;
+          counterEl.textContent = current;
+          // micro bump every ~10 units
+          if (current % 10 === 0) {
+            counterEl.classList.remove('bump');
+            void counterEl.offsetWidth; // reflow to restart animation
+            counterEl.classList.add('bump');
+          }
+        }
+        if (progress < 1) requestAnimationFrame(animateCounter);
+        else {
+          // After count-up, tick up by 1 every ~28 seconds to feel "live"
+          setInterval(() => {
+            current++;
+            counterEl.textContent = current;
+            counterEl.classList.remove('bump');
+            void counterEl.offsetWidth;
+            counterEl.classList.add('bump');
+          }, 28000);
+        }
+      }
+
+      setTimeout(() => requestAnimationFrame(animateCounter), startDelay);
+    }
+
+    /* ── 2. Hero parallax on scroll ── */
+    const heroSection = document.getElementById('page-home');
+    const leftCol  = heroSection ? heroSection.querySelector('.parallax-left')  : null;
+    const rightCol = heroSection ? heroSection.querySelector('.parallax-right') : null;
+
+    let ticking = false;
+
+    function applyParallax() {
+      if (!heroSection || !leftCol || !rightCol) return;
+      // Only run while the home section is visible
+      if (!heroSection.classList.contains('active')) return;
+
+      const scrollY = window.scrollY;
+      // Clamp to avoid over-shooting after the hero
+      const heroH = heroSection.offsetHeight;
+      const clamped = Math.min(scrollY, heroH);
+
+      // Left column moves up slower (floats up)
+      leftCol.style.transform  = `translateY(${clamped * -0.06}px)`;
+      // Right column moves up faster (drifts deeper)
+      rightCol.style.transform = `translateY(${clamped * -0.13}px)`;
+
+      ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(applyParallax);
+        ticking = true;
+      }
+    }, { passive: true });
 
   })();
   </script>
