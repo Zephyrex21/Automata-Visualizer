@@ -5489,6 +5489,8 @@ q1, b, q2</textarea>
       let mouse = { x: -9999, y: -9999, px: -9999, py: -9999, inside: false };
       let particles = [];
       let ripples   = [];   // expanding ring waves
+      let shootingStars = [];
+      let nextShootingStarMs = 0;
       let rafId = null;
       let running = false;
       let frame = 0;
@@ -5498,7 +5500,19 @@ q1, b, q2</textarea>
       function isDark() {
         return document.documentElement.getAttribute('data-theme') === 'dark';
       }
-      function starColor(a)   { return isDark() ? `rgba(180,210,255,${a})` : `rgba(15,60,160,${a})`; }
+      // Randomised star tint: mostly blue-white, occasional warm or purple
+      function starTint(p, a) {
+        if (isDark()) {
+          if (p.tint === 0) return `rgba(255,230,180,${a})`;   // warm dwarf
+          if (p.tint === 1) return `rgba(210,180,255,${a})`;   // purple
+          return `rgba(180,215,255,${a})`;                      // blue-white (most common)
+        } else {
+          if (p.tint === 0) return `rgba(80,20,120,${a})`;
+          if (p.tint === 1) return `rgba(30,70,180,${a})`;
+          return `rgba(15,55,155,${a})`;
+        }
+      }
+      function starColor(a)   { return isDark() ? `rgba(180,215,255,${a})` : `rgba(15,55,155,${a})`; }
       function lineColor(a)   { return isDark() ? `rgba(140,190,255,${a})` : `rgba(20,80,200,${a})`; }
       function glowColor(a)   { return isDark() ? `rgba(120,180,255,${a})` : `rgba(0,90,220,${a})`; }
       function rippleColor(a) { return isDark() ? `rgba(160,200,255,${a})` : `rgba(30,100,230,${a})`; }
@@ -5507,10 +5521,14 @@ q1, b, q2</textarea>
       function makeParticle() {
         const freqX = 0.003 + Math.random() * 0.007;
         const freqY = 0.002 + Math.random() * 0.008;
-        const size  = 0.7  + Math.random() * 2.6;
-        // Give every particle a healthy initial kick so they're never born still
+        const size  = 0.5 + Math.random() * 2.8;
+        // Depth layer: 0=far (small, slow), 1=near (larger, faster)
+        const depth = Math.random();
         const angle = Math.random() * Math.PI * 2;
-        const speed = opts.baseDrift * (0.6 + Math.random() * 1.2);
+        const speed = opts.baseDrift * (0.3 + depth * 1.4);
+        // tint: 0=warm star (~8%), 1=purple (~12%), 2=blue-white (~80%)
+        const tintRoll = Math.random();
+        const tint = tintRoll < 0.08 ? 0 : tintRoll < 0.20 ? 1 : 2;
         return {
           x:  Math.random() * W,
           y:  Math.random() * H,
@@ -5522,9 +5540,11 @@ q1, b, q2</textarea>
           ampX:   0.12 + Math.random() * 0.45,
           ampY:   0.12 + Math.random() * 0.45,
           size,
-          baseOpacity:   0.35 + Math.random() * 0.55,
+          depth,
+          tint,
+          baseOpacity:   0.25 + depth * 0.55 + Math.random() * 0.20,
           twinkleOffset: Math.random() * Math.PI * 2,
-          twinkleSpeed:  0.010 + Math.random() * 0.018,
+          twinkleSpeed:  0.008 + Math.random() * 0.016,
           isGiant: size > 2.8,
         };
       }
@@ -5582,7 +5602,28 @@ q1, b, q2</textarea>
         });
       }
 
-      /* ── Physics tick ── */
+      /* ── Shooting-star factory ── */
+      function spawnShootingStar() {
+        // Start from top or left edge, streak diagonally across canvas
+        const fromTop = Math.random() < 0.6;
+        const x = fromTop ? Math.random() * W : -8;
+        const y = fromTop ? -8 : Math.random() * (H * 0.6);
+        const angle = (Math.PI * 0.22) + (Math.random() - 0.5) * (Math.PI * 0.28);
+        const speed = 5 + Math.random() * 7;
+        const len   = 50 + Math.random() * 90;
+        shootingStars.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          length: len,
+          alpha: 0.65 + Math.random() * 0.35,
+          size:  0.7 + Math.random() * 1.1,
+          life:  1.0,
+          decay: 0.014 + Math.random() * 0.010,
+        });
+      }
+
+
       function tick() {
         frame++;
         ctx.clearRect(0, 0, W, H);
@@ -5640,14 +5681,46 @@ q1, b, q2</textarea>
           ctx.stroke();
         }
 
-        /* ── 3. Particle physics — Lissajous drift + mouse repulsion ── */
-        const repelRadius   = 110;   // px — how far the repulsion field reaches
-        const repelStrength = 0.38;  // force multiplier
+        /* ── 3. Particle physics — Flow-field drift + edge repulsion + mouse ── */
+        // Position-based flow field: steering angle depends on WHERE a particle is,
+        // not just WHEN, so there are no global "attractor" corners.
+        const repelRadius   = 110;
+        const repelStrength = 0.38;
+        const edgeFade      = 60;    // px – soft boundary repulsion zone
+        const edgePush      = 0.06;  // force magnitude inside that zone
+        const flowSpatial   = 0.0013; // spatial scale of the pseudo-noise field
+        const flowTemporal  = 0.00020; // how slowly the field evolves in time
 
         for (const p of particles) {
-          // Sine-wave steering → gentle drifting figure-eight paths
-          p.vx += Math.sin(frame * p.freqX + p.phaseX) * p.ampX * 0.009;
-          p.vy += Math.cos(frame * p.freqY + p.phaseY) * p.ampY * 0.009;
+          // ── Two-octave position-based flow field ──
+          // Uses trig at incommensurate frequencies so the field has no
+          // repeating attractor grid — particles wander continuously.
+          const fx = p.x * flowSpatial + frame * flowTemporal;
+          const fy = p.y * flowSpatial + frame * flowTemporal * 0.73;
+          const ang =
+              Math.sin(fx * 1.37 + fy * 0.83 + p.phaseX) * Math.PI
+            + Math.cos(fx * 0.61 - fy * 1.29 + p.phaseY) * Math.PI * 0.5
+            + Math.sin(fx * 0.94 + fy * 1.57 + frame * p.freqX * 0.038) * Math.PI * 0.35;
+
+          const fStr = p.ampX * 0.011;
+          p.vx += Math.cos(ang) * fStr;
+          p.vy += Math.sin(ang) * fStr;
+
+          // ── Soft edge repulsion — squared falloff so corners feel strongly pushed ──
+          if (p.x < edgeFade) {
+            const t = 1 - p.x / edgeFade;
+            p.vx += edgePush * t * t;
+          } else if (p.x > W - edgeFade) {
+            const t = 1 - (W - p.x) / edgeFade;
+            p.vx -= edgePush * t * t;
+          }
+          if (p.y < edgeFade) {
+            const t = 1 - p.y / edgeFade;
+            p.vy += edgePush * t * t;
+          } else if (p.y > H - edgeFade) {
+            const t = 1 - (H - p.y) / edgeFade;
+            p.vy -= edgePush * t * t;
+          }
 
           // ── Mouse repulsion ──
           if (mouse.inside) {
@@ -5655,7 +5728,6 @@ q1, b, q2</textarea>
             const mdy = p.y - mouse.y;
             const md  = Math.sqrt(mdx * mdx + mdy * mdy) || 0.001;
             if (md < repelRadius) {
-              // Inverse-square falloff: strong up close, smooth at edge
               const falloff = (1 - md / repelRadius);
               const force   = repelStrength * falloff * falloff;
               p.vx += (mdx / md) * force;
@@ -5663,32 +5735,66 @@ q1, b, q2</textarea>
             }
           }
 
-          // Very soft speed floor — never stop completely
+          // Speed floor — nudge in local flow direction, never freeze
           const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-          if (spd < opts.baseDrift * 0.35) {
-            const boost = opts.baseDrift * 0.35 / (spd || 0.001);
-            p.vx *= boost;
-            p.vy *= boost;
+          if (spd < opts.baseDrift * 0.4) {
+            p.vx += Math.cos(ang) * opts.baseDrift * 0.20;
+            p.vy += Math.sin(ang) * opts.baseDrift * 0.20;
           }
-          // Soft speed ceiling — no teleporting
-          if (spd > opts.baseDrift * 6) {
-            p.vx = (p.vx / spd) * opts.baseDrift * 6;
-            p.vy = (p.vy / spd) * opts.baseDrift * 6;
+          // Speed ceiling
+          if (spd > opts.baseDrift * 5.5) {
+            p.vx = (p.vx / spd) * opts.baseDrift * 5.5;
+            p.vy = (p.vy / spd) * opts.baseDrift * 5.5;
           }
 
-          // Very light damping — almost frictionless space
           p.vx *= opts.damping;
           p.vy *= opts.damping;
 
           p.x += p.vx;
           p.y += p.vy;
 
-          // Seamless edge wrap
+          // Wrap (safety net — edge repulsion prevents most crossings)
           if (p.x < -12) p.x = W + 12;
           else if (p.x > W + 12) p.x = -12;
           if (p.y < -12) p.y = H + 12;
           else if (p.y > H + 12) p.y = -12;
         }
+
+        /* ── 3b. Shooting stars ── */
+        const nowMs = performance.now();
+        if (nowMs > nextShootingStarMs) {
+          spawnShootingStar();
+          nextShootingStarMs = nowMs + 3500 + Math.random() * 7000;
+        }
+        const liveStars = [];
+        for (const ss of shootingStars) {
+          ss.x    += ss.vx;
+          ss.y    += ss.vy;
+          ss.life -= ss.decay;
+          if (ss.life > 0 && ss.x < W + 120 && ss.y < H + 120) {
+            liveStars.push(ss);
+            const spd2 = Math.sqrt(ss.vx * ss.vx + ss.vy * ss.vy) || 1;
+            const tx = ss.x - (ss.vx / spd2) * ss.length;
+            const ty = ss.y - (ss.vy / spd2) * ss.length;
+            const a  = ss.alpha * ss.life;
+            const sg = ctx.createLinearGradient(tx, ty, ss.x, ss.y);
+            sg.addColorStop(0, starColor(0));
+            sg.addColorStop(0.5, starColor(a * 0.4));
+            sg.addColorStop(1, starColor(a));
+            ctx.beginPath();
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(ss.x, ss.y);
+            ctx.strokeStyle = sg;
+            ctx.lineWidth   = ss.size;
+            ctx.stroke();
+            // bright head dot
+            ctx.beginPath();
+            ctx.arc(ss.x, ss.y, ss.size * 1.4, 0, Math.PI * 2);
+            ctx.fillStyle = starColor(a);
+            ctx.fill();
+          }
+        }
+        shootingStars = liveStars;
 
         /* ── 4. Constellation lines ── */
         for (let i = 0; i < particles.length; i++) {
@@ -5714,9 +5820,9 @@ q1, b, q2</textarea>
           const opacity = Math.min(p.baseOpacity * twinkle, 1);
 
           if (p.isGiant) {
-            const haloR = p.size * 4;
+            const haloR = p.size * (3.5 + p.depth * 2);
             const grad  = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, haloR);
-            grad.addColorStop(0, glowColor(opacity * 0.45));
+            grad.addColorStop(0, glowColor(opacity * 0.5));
             grad.addColorStop(1, glowColor(0));
             ctx.beginPath();
             ctx.arc(p.x, p.y, haloR, 0, Math.PI * 2);
@@ -5726,7 +5832,7 @@ q1, b, q2</textarea>
 
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = starColor(opacity);
+          ctx.fillStyle = starTint(p, opacity);
           ctx.fill();
         }
 
