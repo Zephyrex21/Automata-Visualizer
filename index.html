@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --btn-gradient: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #a855f7 100%);
@@ -70,7 +70,7 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-mono { font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace; }
 
     .glass {
       background: var(--glass-bg);
@@ -1165,27 +1165,26 @@
                 </div>
 
                 <!-- Animated code lines -->
-                <div class="font-mono text-sm leading-relaxed" style="color: var(--text-secondary); overflow: hidden;">
-                  <span class="code-line" style="animation-delay: 1.00s;"><span style="color:#ff6b6b;">function</span> <span style="color:var(--accent);">subsetConstruction</span>(nfa) {</span>
-                  <span class="code-line" style="animation-delay: 1.14s;">  <span style="color:var(--text-tertiary);">// Step 1: ε-closure of start</span></span>
-                  <span class="code-line" style="animation-delay: 1.28s;">  <span style="color:#ff6b6b;">const</span> q0 = <span style="color:var(--accent);">εClosure</span>({nfa.start});</span>
-                  <span class="code-line" style="animation-delay: 1.42s;">  <span style="color:#ff6b6b;">const</span> worklist = [q0];</span>
-                  <span class="code-line" style="animation-delay: 1.50s;"> </span>
-                  <span class="code-line" style="animation-delay: 1.56s;">  <span style="color:#ff6b6b;">while</span> (worklist.<span style="color:var(--accent);">length</span>) {</span>
-                  <span class="code-line" style="animation-delay: 1.70s;">    <span style="color:#ff6b6b;">const</span> S = worklist.<span style="color:var(--accent);">shift</span>();</span>
-                  <span class="code-line" style="animation-delay: 1.78s;"> </span>
-                  <span class="code-line" style="animation-delay: 1.84s;">    <span style="color:#ff6b6b;">for</span> (<span style="color:#ff6b6b;">const</span> a <span style="color:#ff6b6b;">of</span> nfa.alphabet) {</span>
-                  <span class="code-line" style="animation-delay: 1.98s;">      <span style="color:var(--text-tertiary);">// move then ε-closure</span></span>
-                  <span class="code-line" style="animation-delay: 2.12s;">      <span style="color:#ff6b6b;">const</span> T = <span style="color:var(--accent);">εClosure</span>(</span>
-                  <span class="code-line" style="animation-delay: 2.26s;">        <span style="color:var(--accent);">move</span>(S, a)</span>
-                  <span class="code-line" style="animation-delay: 2.40s;">      );</span>
-                  <span class="code-line" style="animation-delay: 2.54s;">      <span style="color:#ff6b6b;">if</span> (!dfa.<span style="color:var(--accent);">has</span>(T))</span>
-                  <span class="code-line" style="animation-delay: 2.68s;">        worklist.<span style="color:var(--accent);">push</span>(T);</span>
-                  <span class="code-line" style="animation-delay: 2.82s;">      dfa.<span style="color:var(--accent);">addTransition</span>(S, a, T);</span>
-                  <span class="code-line" style="animation-delay: 2.96s;">    }</span>
-                  <span class="code-line" style="animation-delay: 3.10s;">  }</span>
-                  <span class="code-line" style="animation-delay: 3.24s;">  <span style="color:#ff6b6b;">return</span> dfa;<span class="code-cursor" style="animation-delay: 3.62s;"></span></span>
-                  <span class="code-line" style="animation-delay: 3.38s;">}</span>
+                <div class="font-mono text-sm leading-relaxed" style="font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace; font-size: 13px; line-height: 1.85; letter-spacing: 0.01em; color: var(--text-secondary); overflow: hidden;">
+                  <span class="code-line" style="animation-delay: 1.00s;"><span style="color:#ff6b6b;">ALGO</span> <span style="color:var(--accent);">SubsetConstruction</span>(NFA):</span>
+                  <span class="code-line" style="animation-delay: 1.14s;"> </span>
+                  <span class="code-line" style="animation-delay: 1.20s;">  <span style="color:var(--text-tertiary);">// 1. Start from the initial state</span></span>
+                  <span class="code-line" style="animation-delay: 1.34s;">  q₀  <span style="color:#ff6b6b;">←</span>  <span style="color:var(--accent);">ε-closure</span>({ NFA.start })</span>
+                  <span class="code-line" style="animation-delay: 1.48s;">  queue  <span style="color:#ff6b6b;">←</span>  [ q₀ ]</span>
+                  <span class="code-line" style="animation-delay: 1.56s;"> </span>
+                  <span class="code-line" style="animation-delay: 1.62s;">  <span style="color:#ff6b6b;">WHILE</span> queue is not empty:</span>
+                  <span class="code-line" style="animation-delay: 1.76s;">    S  <span style="color:#ff6b6b;">←</span>  queue.<span style="color:var(--accent);">dequeue</span>()</span>
+                  <span class="code-line" style="animation-delay: 1.84s;"> </span>
+                  <span class="code-line" style="animation-delay: 1.90s;">    <span style="color:#ff6b6b;">FOR EACH</span> symbol  <span style="color:#f59e0b;">a</span>  in Σ (alphabet):</span>
+                  <span class="code-line" style="animation-delay: 2.04s;">      <span style="color:var(--text-tertiary);">// Follow 'a', then close over ε-moves</span></span>
+                  <span class="code-line" style="animation-delay: 2.18s;">      T  <span style="color:#ff6b6b;">←</span>  <span style="color:var(--accent);">ε-closure</span>( <span style="color:var(--accent);">move</span>(S, <span style="color:#f59e0b;">a</span>) )</span>
+                  <span class="code-line" style="animation-delay: 2.32s;"> </span>
+                  <span class="code-line" style="animation-delay: 2.38s;">      <span style="color:#ff6b6b;">IF</span> T is a new state:</span>
+                  <span class="code-line" style="animation-delay: 2.52s;">        queue.<span style="color:var(--accent);">enqueue</span>( T )</span>
+                  <span class="code-line" style="animation-delay: 2.66s;"> </span>
+                  <span class="code-line" style="animation-delay: 2.72s;">      DFA.<span style="color:var(--accent);">addEdge</span>( S <span style="color:#ff6b6b;">─<span style="color:#f59e0b;">a</span>→</span> T )</span>
+                  <span class="code-line" style="animation-delay: 2.86s;"> </span>
+                  <span class="code-line" style="animation-delay: 2.92s;">  <span style="color:#ff6b6b;">RETURN</span> DFA<span class="code-cursor" style="animation-delay: 3.30s;"></span></span>
                 </div>
               </div>
             </div>
