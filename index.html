@@ -2390,7 +2390,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               Export DFA JSON
             </button>
-            <button class="conv-btn" id="minimizeDFABtn" style="padding:9px 16px;font-size:13px;background:linear-gradient(135deg,#af52de,#ff375f);color:white;border:none;position:relative;overflow:hidden;" onclick="convMinimizeDFA()" title="Open your converted DFA in the DFA Minimizer">
+            <button class="conv-btn" id="minimizeDFABtn" style="padding:9px 16px;font-size:13px;background:linear-gradient(135deg,#af52de,#ff375f);color:white;border:none;position:relative;overflow:hidden;" onclick="convMinimizeDFA()" title="Load this DFA into the built-in DFA Minimizer">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0;"><path d="M4 14l4-4 4 4 4-8"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/></svg>
               Minimize this DFA ✦
             </button>
@@ -5709,61 +5709,33 @@ q1, b, q2</textarea>
     }
 
     // ============================================================
-    //  MINIMIZE THIS DFA — open friend's DFA Minimizer
+    //  MINIMIZE THIS DFA — load into internal DFA Minimizer section
     // ============================================================
     function convMinimizeDFA() {
       if (!conv.dfaStatesMap.size) { convToast('Run the conversion first.', 'warn'); return; }
 
-      /* Build the DFA JSON (same format as convExportDFA) */
+      /* Load the converted DFA directly into the internal minimizer */
       const entries = [...conv.dfaStatesMap.values()];
-      const dfaData = {
-        version: 2, mode: 'DFA',
-        alphabet:     conv.nfaAlphabet.filter(s => s !== 'ε'),
-        startState:   conv.dfaStartLabel,
-        acceptStates: [...conv.dfaAccept],
-        states:       entries.map(e => ({ id: e.label, label: e.label, x: 100, y: 100 })),
-        transitions:  conv.dfaAllTrans,
-        nfaSource: { states: conv.nfaStates.map(s => s.label), example: conv.selectedExample }
-      };
-      const jsonStr = JSON.stringify(dfaData, null, 2);
+      mini.dfaAlphabet    = conv.nfaAlphabet.filter(s => s !== 'ε');
+      mini.dfaStates      = entries.map(e => ({ id: e.label, label: e.label }));
+      mini.dfaTransitions = conv.dfaAllTrans.map(t => ({ from: t.from, to: t.to, symbol: t.symbol }));
+      mini.dfaStart       = conv.dfaStartLabel;
+      mini.dfaAccept      = new Set([...conv.dfaAccept]);
 
-      /* Try to copy JSON to clipboard so user can import it in the minimizer */
-      const minimizerURL = 'https://dfa-mini.vercel.app/app';
+      /* Clear any active example highlight in the minimizer */
+      [1, 2, 3, 4].forEach(i => document.getElementById('miniEx' + i)?.classList.remove('active'));
 
-      const openAndNotify = (copied) => {
-        window.open(minimizerURL, '_blank', 'noopener,noreferrer');
-        if (copied) {
-          convToast(
-            '✦ DFA JSON copied! In the minimizer → click <strong>Import</strong> and paste it to load your DFA automatically.',
-            'success', 6000
-          );
-        } else {
-          convToast(
-            '✦ Minimizer opened! Use <strong>Export DFA JSON</strong> first, then import the file in the minimizer.',
-            'info', 5000
-          );
-        }
-      };
+      /* Reset minimizer state and refresh its input table */
+      miniReset();
+      miniUpdateInputTable();
 
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(jsonStr)
-          .then(() => openAndNotify(true))
-          .catch(() => openAndNotify(false));
-      } else {
-        /* Fallback: textarea copy trick */
-        try {
-          const ta = document.createElement('textarea');
-          ta.value = jsonStr;
-          ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
-          document.body.appendChild(ta);
-          ta.select();
-          const ok = document.execCommand('copy');
-          document.body.removeChild(ta);
-          openAndNotify(ok);
-        } catch (_) {
-          openAndNotify(false);
-        }
-      }
+      /* Navigate to the minimizer page */
+      showPage('minimize');
+
+      convToast(
+        `✦ Converted DFA (${mini.dfaStates.length} states) loaded into DFA Minimizer — press <strong>Minimize Step-by-Step</strong> to begin!`,
+        'success', 5000
+      );
     }
 
     /* toggle "How It Works" */
