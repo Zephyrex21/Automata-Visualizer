@@ -814,6 +814,77 @@
       margin: 0 2px;
     }
 
+    /* ══════════════════════════════════════════
+       DFA MINIMIZER PAGE STYLES
+       ══════════════════════════════════════════ */
+
+    /* Canvas label for minimized DFA */
+    .canvas-label-min { background: rgba(175,82,222,0.18); color: #af52de; border: 1px solid rgba(175,82,222,0.3); }
+
+    /* Pairs triangular table */
+    .pairs-tbl { border-collapse: separate; border-spacing: 4px; margin: 0 auto; }
+    .pairs-tbl th { font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); padding: 2px 6px; text-align: center; }
+    .pairs-tbl td {
+      width: 36px; height: 36px; border-radius: 8px; text-align: center;
+      vertical-align: middle; font-size: 11px; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      transition: background 0.35s ease, color 0.35s ease;
+      cursor: default; border: 1.5px solid transparent;
+    }
+    .pair-marked  { background: rgba(255,59,48,0.18); color: #ff3b30; border-color: rgba(255,59,48,0.35); }
+    .pair-unmarked{ background: rgba(52,199,89,0.14); color: #34c759;  border-color: rgba(52,199,89,0.3); }
+    .pair-checking{ background: rgba(255,149,0,0.2);  color: #ff9500;  border-color: #ff9500; animation: pairPulse 0.8s ease-in-out infinite; }
+    .pair-fresh   { background: rgba(255,59,48,0.38); color: #ff3b30;  border-color: #ff3b30; animation: pairFresh 0.6s ease-out; }
+    .pair-unknown { background: var(--bg-tertiary);   color: var(--text-tertiary); border-color: var(--border); }
+    .pair-diag    { background: transparent; color: var(--border); border-color: transparent; }
+    @keyframes pairPulse { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
+    @keyframes pairFresh { from{background:rgba(255,59,48,0.55);} to{background:rgba(255,59,48,0.18);} }
+
+    /* Equivalence class chips */
+    .equiv-class-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      animation: chipAppear 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    /* Minimize primary button */
+    .mini-btn-primary {
+      background: linear-gradient(135deg, #af52de, #ff375f) !important;
+      color: white !important;
+      animation: miniStartPulse 3s ease-in-out infinite;
+    }
+    @keyframes miniStartPulse {
+      0%,100% { box-shadow: 0 4px 14px rgba(175,82,222,0.3); }
+      50%      { box-shadow: 0 6px 22px rgba(255,55,95,0.45); }
+    }
+    .mini-btn-primary:hover { filter: brightness(1.12); transform: translateY(-2px); }
+
+    /* Progress bar purple variant */
+    .mini-progress-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, #af52de, #ff375f);
+      transition: width 0.4s ease;
+    }
+
+    @media (max-width: 900px) {
+      #miniWorkspace { grid-template-columns: 1fr !important; }
+    }
+
+    /* ── Minimize DFA button — shimmer glow ── */
+    #minimizeDFABtn {
+      animation: minimizePulse 3s ease-in-out infinite;
+    }
+    #minimizeDFABtn:hover {
+      filter: brightness(1.15);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(175,82,222,0.45);
+    }
+    @keyframes minimizePulse {
+      0%, 100% { box-shadow: 0 4px 14px rgba(175,82,222,0.3); }
+      50%       { box-shadow: 0 6px 22px rgba(255,55,95,0.45); }
+    }
+
     /* ── NFA Convert Banner ── */
     @keyframes nfaBannerIn {
       from { opacity: 0; transform: translateY(10px) scale(0.98); }
@@ -1033,6 +1104,10 @@
         <a href="#" class="nav-link active" data-page="home" onclick="showPage('home')">Home</a>
         <a href="#" class="nav-link" data-page="simulator" onclick="showPage('simulator')">Simulator</a>
         <a href="#" class="nav-link" data-page="convert" onclick="showPage('convert')">NFA→DFA</a>
+        <a href="#" class="nav-link" data-page="minimize" onclick="showPage('minimize')" style="position:relative;">
+          Minimize DFA
+          <span style="position:absolute;top:-4px;right:-6px;background:linear-gradient(135deg,#af52de,#ff375f);color:white;font-size:8px;font-weight:800;padding:1px 5px;border-radius:10px;letter-spacing:0.3px;">NEW</span>
+        </a>
         <a href="#" class="nav-link" data-page="learn" onclick="showPage('learn')">Learn</a>
         <a href="#" class="nav-link" data-page="about" onclick="showPage('about')">About</a>
       </div>
@@ -1059,6 +1134,7 @@
         <a href="#" class="nav-link active" onclick="showPage('home'); closeMobileMenu()">Home</a>
         <a href="#" class="nav-link" onclick="showPage('simulator'); closeMobileMenu()">Simulator</a>
         <a href="#" class="nav-link" onclick="showPage('convert'); closeMobileMenu()">NFA→DFA</a>
+        <a href="#" class="nav-link" onclick="showPage('minimize'); closeMobileMenu()">Minimize DFA ✦</a>
         <a href="#" class="nav-link" onclick="showPage('learn'); closeMobileMenu()">Learn</a>
         <a href="#" class="nav-link" onclick="showPage('about'); closeMobileMenu()">About</a>
         <button class="btn-primary mt-4" onclick="showPage('convert'); closeMobileMenu()">Open NFA→DFA Converter</button>
@@ -2313,6 +2389,264 @@
             <button class="conv-btn conv-btn-secondary" style="padding:9px 16px;font-size:13px;" onclick="convExportDFA()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               Export DFA JSON
+            </button>
+            <button class="conv-btn" id="minimizeDFABtn" style="padding:9px 16px;font-size:13px;background:linear-gradient(135deg,#af52de,#ff375f);color:white;border:none;position:relative;overflow:hidden;" onclick="convMinimizeDFA()" title="Open your converted DFA in the DFA Minimizer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0;"><path d="M4 14l4-4 4 4 4-8"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/></svg>
+              Minimize this DFA ✦
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /max-width -->
+  </section>
+
+  <!-- ============================================
+       DFA MINIMIZER PAGE — Table-Filling (Myhill–Nerode)
+       Same compact no-scroll layout as NFA→DFA Converter
+       ============================================ -->
+  <section id="page-minimize" class="page-section pt-20 min-h-screen" style="background: var(--bg-primary);">
+    <div style="max-width:1400px;" class="mx-auto px-4 py-4">
+
+      <!-- ══ ROW 1: Header ══ -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+               style="background:linear-gradient(135deg,#af52de,#ff375f);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+              <circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle>
+              <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+              <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+              <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold leading-tight">DFA Minimizer</h1>
+            <p class="text-xs" style="color:var(--text-tertiary);">Table-Filling (Myhill–Nerode) — step-by-step visualization</p>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="conv-btn conv-btn-secondary" style="padding:8px 14px;font-size:12px;" onclick="miniLoadFromConverter()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+            Use Converted DFA
+          </button>
+          <button class="conv-btn conv-btn-secondary" style="padding:8px 14px;font-size:12px;" onclick="miniToggleConcepts()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            How It Works
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ ROW 2: Example pills ══ -->
+      <div class="flex flex-wrap gap-2 mb-3">
+        <span class="text-xs font-semibold self-center" style="color:var(--text-tertiary);white-space:nowrap;">Examples:</span>
+        <button class="conv-pill-btn active" id="miniEx1" onclick="miniLoadExample(1)" title="4-state DFA where states B and D are equivalent → merges to 3 states">① Ends in 'a' (B≡D merge)</button>
+        <button class="conv-pill-btn" id="miniEx2" onclick="miniLoadExample(2)" title="3-state DFA — all states are distinguishable, already minimal">② Contains 'aa' (already minimal)</button>
+        <button class="conv-pill-btn" id="miniEx3" onclick="miniLoadExample(3)" title="3 all-accepting states that are all indistinguishable → collapses to 1 state">③ All-accepting (→ 1 state)</button>
+        <button class="conv-pill-btn" id="miniEx4" onclick="miniLoadExample(4)" title="4-state DFA where state D is unreachable — demonstrates removal step">④ Unreachable state</button>
+      </div>
+
+      <!-- ══ "How It Works" collapsible ══ -->
+      <div id="miniConceptPanel" style="display:none;" class="mb-3 animate-fade-in">
+        <div class="concept-panel" style="padding:16px 20px;">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-sm">Table-Filling (Myhill–Nerode) Algorithm</h3>
+            <button onclick="miniToggleConcepts()" style="font-size:11px;color:var(--text-tertiary);background:none;border:none;cursor:pointer;">✕ close</button>
+          </div>
+          <div class="grid md:grid-cols-3 gap-x-8 gap-y-0">
+            <div class="concept-step" style="padding:8px 0;">
+              <div class="concept-step-num">1</div>
+              <div><p class="font-semibold text-xs mb-0.5">Remove unreachable states</p>
+              <p class="text-xs" style="color:var(--text-secondary);">BFS from start — discard states that can never be entered by any input.</p></div>
+            </div>
+            <div class="concept-step" style="padding:8px 0;">
+              <div class="concept-step-num">2</div>
+              <div><p class="font-semibold text-xs mb-0.5">Base case — mark (accept, non-accept)</p>
+              <p class="text-xs" style="color:var(--text-secondary);">Any (final, non-final) pair is immediately distinguishable by ε.</p></div>
+            </div>
+            <div class="concept-step" style="padding:8px 0;">
+              <div class="concept-step-num">3</div>
+              <div><p class="font-semibold text-xs mb-0.5">Propagation — fill the table</p>
+              <p class="text-xs" style="color:var(--text-secondary);">If δ(p,a) and δ(q,a) are marked → mark (p,q). Repeat until stable.</p></div>
+            </div>
+            <div class="concept-step" style="padding:8px 0;">
+              <div class="concept-step-num">4</div>
+              <div><p class="font-semibold text-xs mb-0.5">Unmarked pairs = equivalent states</p>
+              <p class="text-xs" style="color:var(--text-secondary);">All unmarked pairs represent indistinguishable states.</p></div>
+            </div>
+            <div class="concept-step" style="padding:8px 0;">
+              <div class="concept-step-num">5</div>
+              <div><p class="font-semibold text-xs mb-0.5">Merge equivalence classes</p>
+              <p class="text-xs" style="color:var(--text-secondary);">Group equivalent states → single state in the minimal DFA.</p></div>
+            </div>
+            <div class="concept-step" style="padding:8px 0;">
+              <div class="concept-step-num">6</div>
+              <div><p class="font-semibold text-xs mb-0.5">Build the minimal DFA</p>
+              <p class="text-xs" style="color:var(--text-secondary);">Guaranteed smallest DFA for the language by Myhill–Nerode theorem.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ROW 3: Controls ══ -->
+      <div class="card mb-3" style="padding:12px 16px;">
+        <div class="flex flex-wrap items-center gap-3">
+          <button class="conv-btn conv-btn-secondary" style="padding:8px 14px;" onclick="miniReset()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+            Reset
+          </button>
+          <button class="conv-btn mini-btn-primary" id="miniStartBtn" style="padding:8px 18px;border:none;" onclick="miniStart()">
+            Minimize Step-by-Step
+          </button>
+          <div style="width:1px;height:28px;background:var(--border);"></div>
+          <!-- Playback controls -->
+          <div class="conv-hidden flex items-center gap-2" id="miniPlayControls">
+            <button class="conv-btn-icon" id="miniPrevBtn" onclick="miniPrev()" title="Previous (←)" style="width:36px;height:36px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+            </button>
+            <button class="conv-btn-icon" id="miniPlayBtn" onclick="miniToggleAutoPlay()" title="Auto-Play (Space)" style="width:36px;height:36px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="miniPlayIcon"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="miniPauseIcon" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+            <button class="conv-btn-icon" id="miniNextBtn" onclick="miniNext()" title="Next (→)" style="width:36px;height:36px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+            </button>
+            <button class="conv-btn conv-btn-secondary" id="miniEndBtn" onclick="miniJumpToEnd()" style="padding:6px 12px;font-size:11px;font-weight:700;white-space:nowrap;">⇥ Final DFA</button>
+          </div>
+          <!-- Speed -->
+          <div class="conv-hidden speed-control" id="miniSpeedControl" style="padding:5px 12px;">
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Speed</label>
+            <input type="range" id="miniSpeedSlider" min="1" max="5" value="3" step="1" oninput="miniUpdateSpeed(this.value)" style="width:70px;accent-color:#af52de;">
+            <span class="speed-val" id="miniSpeedVal">1×</span>
+          </div>
+          <!-- Progress + counter -->
+          <div class="flex-1 flex items-center gap-3 justify-end min-w-0">
+            <div class="conv-progress-track" style="flex:1;max-width:180px;">
+              <div class="mini-progress-fill" id="miniProgressFill" style="width:0%;height:100%;border-radius:3px;background:linear-gradient(90deg,#af52de,#ff375f);transition:width 0.4s;"></div>
+            </div>
+            <span class="font-mono text-xs flex-shrink-0" id="miniStepCounter" style="color:var(--text-secondary);">0 / 0</span>
+            <span class="text-xs flex-shrink-0" style="color:var(--text-tertiary);">
+              <span class="kbd">←</span><span class="kbd">→</span><span class="kbd">Space</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ROW 4: MAIN WORKSPACE — 3 columns ══
+           [Step panel + DFA δ table] | [DFA canvas + Pairs table] | [Min DFA canvas + Min δ table] -->
+      <div id="miniWorkspace" class="grid gap-3 mb-3" style="grid-template-columns: 300px 1fr 1fr; align-items: stretch;">
+
+        <!-- A: Step info panel -->
+        <div class="step-panel flex flex-col" id="miniStepPanel">
+          <div class="step-phase-bar step-phase-idle" id="miniPhaseBar"></div>
+
+          <div class="flex items-center justify-between mb-2">
+            <span class="step-number-badge" id="miniStepBadge" style="font-size:11px;padding:3px 10px;background:rgba(175,82,222,0.15);color:#af52de;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line></svg>
+              Ready
+            </span>
+          </div>
+
+          <div class="step-title" id="miniStepTitle" style="font-size:13px;margin-bottom:8px;">
+            Select an example and press Minimize
+          </div>
+          <div class="step-explanation" id="miniStepExpl" style="font-size:12px;line-height:1.6;">
+            The table-filling algorithm finds all pairs of <strong>distinguishable states</strong>. Remaining indistinguishable pairs are merged into the minimal DFA.
+          </div>
+
+          <!-- Equivalence classes banner -->
+          <div id="miniClassBanner" style="display:none;margin-top:10px;background:rgba(175,82,222,0.1);border-radius:10px;padding:10px 14px;">
+            <p style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Equivalence Classes</p>
+            <div id="miniClassChips" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- DFA δ table -->
+          <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;flex:1;display:flex;flex-direction:column;">
+            <p style="font-size:10px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">DFA Transition δ</p>
+            <div class="overflow-x-auto">
+              <table class="transition-table" id="miniDfaTable" style="font-size:11px;">
+                <thead><tr id="miniDfaTableHead"><th>State</th></tr></thead>
+                <tbody id="miniDfaTableBody">
+                  <tr><td colspan="5" style="color:var(--text-tertiary);padding:10px;text-align:center;font-size:11px;">Load an example</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="flex gap-3 mt-1" style="font-size:10px;color:var(--text-tertiary);">
+              <span>→ start</span><span>* accept</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- B: Original DFA canvas + State Pairs Table -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="canvas-container" id="miniDfaContainer" style="height:290px;position:relative;border-radius:16px;flex-shrink:0;">
+            <div class="canvas-label-badge canvas-label-nfa">DFA</div>
+            <canvas id="miniDfaCanvas" style="display:block;"></canvas>
+          </div>
+
+          <!-- State Pairs Table -->
+          <div class="card" style="padding:12px 14px;flex:1;display:flex;flex-direction:column;">
+            <div class="flex items-center justify-between mb-2" style="flex-shrink:0;">
+              <p style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">State Pairs Table</p>
+              <div class="flex gap-2" style="font-size:10px;">
+                <span style="background:rgba(255,59,48,0.15);color:#ff3b30;padding:2px 8px;border-radius:20px;">✗ distinct</span>
+                <span style="background:rgba(52,199,89,0.12);color:#34c759;padding:2px 8px;border-radius:20px;">✓ equiv</span>
+              </div>
+            </div>
+            <div id="miniPairsWrap" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;min-height:60px;">
+              <span style="color:var(--text-tertiary);font-size:12px;">Pairs will appear once minimization starts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- C: Minimized DFA canvas + Minimal δ table -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="canvas-container" id="miniMinContainer" style="height:290px;position:relative;border-radius:16px;flex-shrink:0;">
+            <div class="canvas-label-badge canvas-label-min">Min DFA</div>
+            <canvas id="miniMinCanvas" style="display:block;"></canvas>
+          </div>
+
+          <!-- Minimized DFA Transition Table -->
+          <div class="card" style="padding:12px 14px;flex:1;display:flex;flex-direction:column;">
+            <div class="flex items-center justify-between mb-2" style="flex-shrink:0;">
+              <p style="font-size:11px;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;">Minimal DFA Transition δ'</p>
+              <div class="flex gap-2" style="font-size:10px;">
+                <span style="background:rgba(52,199,89,0.12);color:#34c759;padding:2px 8px;border-radius:20px;">* accept</span>
+                <span style="background:rgba(175,82,222,0.12);color:#af52de;padding:2px 8px;border-radius:20px;">→ start</span>
+              </div>
+            </div>
+            <div class="overflow-x-auto" style="flex:1;">
+              <table class="transition-table" id="miniMinTable" style="min-width:100%;font-size:11px;">
+                <thead><tr id="miniMinTableHead"><th>State</th></tr></thead>
+                <tbody id="miniMinTableBody">
+                  <tr><td colspan="99" style="color:var(--text-tertiary);padding:16px;text-align:center;">Minimization will populate this table</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /miniWorkspace -->
+
+      <!-- ══ ROW 5: Summary (shown only when complete) ══ -->
+      <div class="card" id="miniSummaryCard" style="display:none;padding:20px 24px;">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-white flex-shrink-0"
+                  style="background:linear-gradient(135deg,#af52de,#ff375f);font-size:18px;">✦</span>
+            <div>
+              <p class="font-bold">Minimization Complete</p>
+              <div id="miniSummaryBody" class="flex flex-wrap gap-4 mt-1"></div>
+            </div>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button class="conv-btn conv-btn-primary" style="padding:9px 16px;font-size:13px;" onclick="miniSendToSimulator()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Test in Simulator
+            </button>
+            <button class="conv-btn conv-btn-secondary" style="padding:9px 16px;font-size:13px;" onclick="miniExport()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Export Min DFA JSON
             </button>
           </div>
         </div>
@@ -5374,12 +5708,851 @@ q1, b, q2</textarea>
       convToast('DFA exported as converted-dfa.json','success');
     }
 
+    // ============================================================
+    //  MINIMIZE THIS DFA — open friend's DFA Minimizer
+    // ============================================================
+    function convMinimizeDFA() {
+      if (!conv.dfaStatesMap.size) { convToast('Run the conversion first.', 'warn'); return; }
+
+      /* Build the DFA JSON (same format as convExportDFA) */
+      const entries = [...conv.dfaStatesMap.values()];
+      const dfaData = {
+        version: 2, mode: 'DFA',
+        alphabet:     conv.nfaAlphabet.filter(s => s !== 'ε'),
+        startState:   conv.dfaStartLabel,
+        acceptStates: [...conv.dfaAccept],
+        states:       entries.map(e => ({ id: e.label, label: e.label, x: 100, y: 100 })),
+        transitions:  conv.dfaAllTrans,
+        nfaSource: { states: conv.nfaStates.map(s => s.label), example: conv.selectedExample }
+      };
+      const jsonStr = JSON.stringify(dfaData, null, 2);
+
+      /* Try to copy JSON to clipboard so user can import it in the minimizer */
+      const minimizerURL = 'https://dfa-mini.vercel.app/app';
+
+      const openAndNotify = (copied) => {
+        window.open(minimizerURL, '_blank', 'noopener,noreferrer');
+        if (copied) {
+          convToast(
+            '✦ DFA JSON copied! In the minimizer → click <strong>Import</strong> and paste it to load your DFA automatically.',
+            'success', 6000
+          );
+        } else {
+          convToast(
+            '✦ Minimizer opened! Use <strong>Export DFA JSON</strong> first, then import the file in the minimizer.',
+            'info', 5000
+          );
+        }
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(jsonStr)
+          .then(() => openAndNotify(true))
+          .catch(() => openAndNotify(false));
+      } else {
+        /* Fallback: textarea copy trick */
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = jsonStr;
+          ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          openAndNotify(ok);
+        } catch (_) {
+          openAndNotify(false);
+        }
+      }
+    }
+
     /* toggle "How It Works" */
     function convToggleConcepts() {
       const panel=document.getElementById('convConceptPanel');
       const isOpen = panel.style.display!=='none';
       panel.style.display=isOpen?'none':'block';
     }
+
+    // ============================================================
+    //  DFA MINIMIZER — Table-Filling (Myhill–Nerode) Algorithm
+    //  All state isolated in `mini` object, never touching
+    //  Simulator or Converter globals.
+    // ============================================================
+
+    const mini = {
+      dfaStates:      [],   // [{id, label}]
+      dfaTransitions: [],   // [{from, to, symbol}]
+      dfaStart:       null,
+      dfaAccept:      new Set(),
+      dfaAlphabet:    ['a','b'],
+
+      steps:          [],
+      stepIndex:      -1,
+      autoInterval:   null,
+      autoDelay:      900,
+
+      dfaPositions:   new Map(),  // id → {x, y}  (original DFA)
+      minPositions:   new Map(),  // id → {x, y}  (minimized DFA)
+
+      minStates:      [],   // [{id, label, originalIds:[]}]
+      minTransitions: [],   // [{from, to, symbol}]
+      minStart:       null,
+      minAccept:      new Set(),
+
+      selectedExample: 1,
+    };
+
+    // ── Canonical pair key (lexicographic) ──
+    function miniPairKey(a, b) { return a <= b ? `${a}|${b}` : `${b}|${a}`; }
+
+    // ============================================================
+    //  STEP GENERATOR  — full table-filling algorithm
+    // ============================================================
+    function miniGenSteps() {
+      const steps = [];
+      const alpha = mini.dfaAlphabet.filter(s => s !== 'ε');
+
+      // 1. BFS — reachable states
+      const reachable = new Set();
+      if (mini.dfaStart) {
+        const q = [mini.dfaStart]; reachable.add(mini.dfaStart);
+        while (q.length) {
+          const s = q.shift();
+          for (const sym of alpha) {
+            const t = mini.dfaTransitions.find(tr => tr.from === s && tr.symbol === sym);
+            if (t && !reachable.has(t.to)) { reachable.add(t.to); q.push(t.to); }
+          }
+        }
+      }
+      const unreachable = mini.dfaStates.filter(s => !reachable.has(s.id));
+      const workStates  = mini.dfaStates.filter(s =>  reachable.has(s.id));
+
+      function snap(marked, fresh, checking) {
+        return { markedPairs: new Set(marked), freshPairs: new Set(fresh||[]), checkingPair: checking||null };
+      }
+
+      // Step: Reachability
+      steps.push({
+        phase: 'reach',
+        title: unreachable.length
+          ? `BFS found ${unreachable.length} unreachable state(s): { ${unreachable.map(s=>s.label).join(', ')} }`
+          : `BFS: all ${workStates.length} state(s) are reachable`,
+        explanation: `A <strong>BFS</strong> from the start state "<strong>${mini.dfaStart}</strong>" identifies every reachable state. Unreachable states can never be entered and will be removed before minimization.`
+          + (unreachable.length ? `<br><br>States <strong>{ ${unreachable.map(s=>s.label).join(', ')} }</strong> are unreachable and will be discarded.` : '<br><br>No unreachable states — all states participate in minimization.'),
+        dfaGrey: new Set(unreachable.map(s=>s.id)),
+        dfaHL:   reachable,
+        workIds: workStates.map(s=>s.id),
+        equivClasses: [],
+        minStates:[], minTransitions:[], minStart:null, minAccept:new Set(),
+        ...snap(new Set()),
+      });
+
+      if (unreachable.length > 0) {
+        steps.push({
+          phase: 'remove',
+          title: `Removing ${unreachable.length} unreachable state(s)`,
+          explanation: `The greyed-out state(s) <strong>{ ${unreachable.map(s=>s.label).join(', ')} }</strong> are removed. The remaining <strong>${workStates.length}</strong> state(s) form the working DFA.`,
+          dfaGrey: new Set(unreachable.map(s=>s.id)),
+          dfaHL:   reachable,
+          workIds: workStates.map(s=>s.id),
+          equivClasses: [],
+          minStates:[], minTransitions:[], minStart:null, minAccept:new Set(),
+          ...snap(new Set()),
+        });
+      }
+
+      // 2. Build all pairs list
+      const pairs = [];
+      for (let i = 0; i < workStates.length; i++)
+        for (let j = i+1; j < workStates.length; j++)
+          pairs.push([workStates[i].id, workStates[j].id]);
+
+      const marked = new Set();
+
+      // 3. Base case
+      const baseNew = [];
+      for (const [p,q] of pairs) {
+        if (mini.dfaAccept.has(p) !== mini.dfaAccept.has(q)) {
+          marked.add(miniPairKey(p,q)); baseNew.push(miniPairKey(p,q));
+        }
+      }
+      const acceptList    = workStates.filter(s=> mini.dfaAccept.has(s.id)).map(s=>s.label);
+      const nonAcceptList = workStates.filter(s=>!mini.dfaAccept.has(s.id)).map(s=>s.label);
+      steps.push({
+        phase: 'base',
+        title: `Base case: mark ${baseNew.length} (accept, non-accept) pair(s)`,
+        explanation: `Any pair where one state is accepting and the other is not is immediately <strong>distinguishable</strong> — the empty string ε witnesses the difference.<br><br>`
+          + `<strong>Accept:</strong> { ${acceptList.join(', ')||'none'} } &nbsp;·&nbsp; <strong>Non-accept:</strong> { ${nonAcceptList.join(', ')||'none'} }<br>`
+          + `Marked <strong>${baseNew.length}</strong> pair(s) as distinguishable.`,
+        dfaGrey: new Set(unreachable.map(s=>s.id)),
+        dfaHL:   new Set(),
+        workIds: workStates.map(s=>s.id),
+        equivClasses: [],
+        minStates:[], minTransitions:[], minStart:null, minAccept:new Set(),
+        ...snap(marked, baseNew),
+      });
+
+      // 4. Propagation
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const [p,q] of pairs) {
+          if (marked.has(miniPairKey(p,q))) continue;
+          for (const sym of alpha) {
+            const dp = mini.dfaTransitions.find(tr=>tr.from===p&&tr.symbol===sym)?.to;
+            const dq = mini.dfaTransitions.find(tr=>tr.from===q&&tr.symbol===sym)?.to;
+            if (dp && dq && dp !== dq && marked.has(miniPairKey(dp,dq))) {
+              marked.add(miniPairKey(p,q)); changed = true;
+              const pl = workStates.find(s=>s.id===p)?.label || p;
+              const ql = workStates.find(s=>s.id===q)?.label || q;
+              const dpl= workStates.find(s=>s.id===dp)?.label || dp;
+              const dql= workStates.find(s=>s.id===dq)?.label || dq;
+              steps.push({
+                phase: 'propagate',
+                title: `Mark (${pl}, ${ql})  via symbol "${sym}"`,
+                explanation: `On input "<strong>${sym}</strong>", states <strong>${pl}</strong> and <strong>${ql}</strong> lead to <strong>${dpl}</strong> and <strong>${dql}</strong> respectively. Since (<strong>${dpl}</strong>, <strong>${dql}</strong>) is already <span style="color:#ff3b30;">marked ✗</span>, the pair (<strong>${pl}</strong>, <strong>${ql}</strong>) is also distinguishable.`,
+                dfaGrey: new Set(unreachable.map(s=>s.id)),
+                dfaHL:   new Set([p,q]),
+                workIds: workStates.map(s=>s.id),
+                equivClasses: [],
+                minStates:[], minTransitions:[], minStart:null, minAccept:new Set(),
+                viaSymbol: sym, viaPair: miniPairKey(dp,dq),
+                ...snap(marked, [miniPairKey(p,q)], miniPairKey(p,q)),
+              });
+              break;
+            }
+          }
+        }
+      }
+
+      // 5. Stable
+      const unmarked = pairs.filter(([p,q])=>!marked.has(miniPairKey(p,q)));
+      steps.push({
+        phase: 'stable',
+        title: unmarked.length===0 ? 'Table complete — all pairs are distinguishable' : `Table stable — ${unmarked.length} equivalent pair(s) found`,
+        explanation: unmarked.length===0
+          ? `Every pair of states is distinguishable. The DFA is <strong>already minimal</strong> — no merging needed!`
+          : `No more pairs can be marked. The <strong>${unmarked.length}</strong> unmarked pair(s) represent <em>indistinguishable</em> states that will be merged.<br><br>Equivalent pairs: <strong>{ ${unmarked.map(([p,q])=>`(${p},${q})`).join(', ')} }</strong>`,
+        dfaGrey: new Set(unreachable.map(s=>s.id)),
+        dfaHL:   new Set(),
+        workIds: workStates.map(s=>s.id),
+        equivClasses: [],
+        minStates:[], minTransitions:[], minStart:null, minAccept:new Set(),
+        ...snap(marked),
+      });
+
+      // 6. Union-Find → equivalence classes
+      const parent = {}; workStates.forEach(s=>{ parent[s.id]=s.id; });
+      function find(x){ return parent[x]===x?x:(parent[x]=find(parent[x])); }
+      for (const [p,q] of pairs) if (!marked.has(miniPairKey(p,q))) parent[find(p)]=find(q);
+      const classMap = new Map();
+      workStates.forEach(s=>{ const r=find(s.id); if(!classMap.has(r))classMap.set(r,[]); classMap.get(r).push(s.id); });
+      const equivClasses = [...classMap.values()];
+
+      steps.push({
+        phase: 'merge',
+        title: `Grouping ${equivClasses.length} equivalence class(es)`,
+        explanation: `States in the same group are indistinguishable and will be merged into a single state.<br><br>`
+          + equivClasses.map((cls,i)=>`<strong>Class ${i+1}:</strong> { ${cls.map(id=>workStates.find(s=>s.id===id)?.label||id).join(', ')} }`).join('<br>'),
+        dfaGrey: new Set(unreachable.map(s=>s.id)),
+        dfaHL:   new Set(), workIds: workStates.map(s=>s.id),
+        equivClasses,
+        minStates:[], minTransitions:[], minStart:null, minAccept:new Set(),
+        ...snap(marked),
+      });
+
+      // 7. Build minimized DFA
+      // Label each class: single state keeps original label, merged gets {A,B} style
+      const classLabel = new Map(); // original id → min state label
+      const minStatesList = equivClasses.map(cls => {
+        const labels = cls.map(id=>workStates.find(s=>s.id===id)?.label||id);
+        const lab = cls.length===1 ? labels[0] : '{'+labels.join(',')+'}';
+        cls.forEach(id=>classLabel.set(id,lab));
+        return { id: lab, label: lab, originalIds: cls };
+      });
+      const minStart   = classLabel.get(find(mini.dfaStart));
+      const minAccept  = new Set();
+      equivClasses.forEach(cls=>{ if(cls.some(id=>mini.dfaAccept.has(id))) minAccept.add(classLabel.get(cls[0])); });
+      const minTransSet = new Set(); const minTransitions = [];
+      equivClasses.forEach(cls=>{
+        const repId = cls[0];
+        const fromLab = classLabel.get(repId);
+        for (const sym of alpha){
+          const t = mini.dfaTransitions.find(tr=>tr.from===repId&&tr.symbol===sym);
+          if(t){
+            const toLab = classLabel.get(find(t.to));
+            const key = `${fromLab}|${sym}|${toLab}`;
+            if(!minTransSet.has(key)){minTransSet.add(key);minTransitions.push({from:fromLab,to:toLab,symbol:sym});}
+          }
+        }
+      });
+      mini.minStates=minStatesList; mini.minTransitions=minTransitions;
+      mini.minStart=minStart;       mini.minAccept=minAccept;
+
+      steps.push({
+        phase: 'build',
+        title: `Building minimal DFA — ${minStatesList.length} state(s), ${minTransitions.length} transition(s)`,
+        explanation: `The minimal DFA has <strong>${minStatesList.length}</strong> state(s). `
+          + (mini.dfaStates.length-minStatesList.length>0
+            ? `That is <strong>${mini.dfaStates.length-minStatesList.length}</strong> fewer than the original (${mini.dfaStates.length} states).`
+            : `The original DFA was already minimal!`),
+        dfaGrey: new Set(unreachable.map(s=>s.id)), dfaHL: new Set(),
+        workIds: workStates.map(s=>s.id), equivClasses,
+        minStates:minStatesList, minTransitions, minStart, minAccept,
+        ...snap(marked),
+      });
+
+      // 8. Done
+      steps.push({
+        phase: 'done',
+        title: '🎉 Minimization Complete!',
+        explanation: `By the <strong>Myhill–Nerode theorem</strong>, this minimal DFA with <strong>${minStatesList.length}</strong> state(s) is the <em>unique</em> smallest DFA that accepts exactly the same language.`,
+        dfaGrey: new Set(unreachable.map(s=>s.id)), dfaHL: new Set(),
+        workIds: workStates.map(s=>s.id), equivClasses,
+        minStates:minStatesList, minTransitions, minStart, minAccept,
+        isComplete: true,
+        ...snap(marked),
+      });
+
+      return steps;
+    }
+
+    // ============================================================
+    //  STEP APPLICATION — updates every UI panel
+    // ============================================================
+    function miniApplyStep(idx) {
+      if (idx < 0 || idx >= mini.steps.length) return;
+      mini.stepIndex = idx;
+      const step = mini.steps[idx];
+      const total = mini.steps.length;
+
+      // Phase bar color
+      const phaseMap = { reach:'step-phase-init', remove:'step-phase-epsilon', base:'step-phase-move',
+        propagate:'step-phase-trans', stable:'step-phase-new', merge:'step-phase-done', build:'step-phase-done', done:'step-phase-done' };
+      document.getElementById('miniPhaseBar').className = 'step-phase-bar ' + (phaseMap[step.phase]||'step-phase-idle');
+
+      // Badge + progress
+      const phaseLabel = { reach:'Reachability',remove:'Remove',base:'Base Case',propagate:'Propagate',
+        stable:'Stable',merge:'Merge',build:'Build',done:'✓ Done' };
+      document.getElementById('miniStepBadge').textContent = `Step ${idx+1} / ${total}  ·  ${phaseLabel[step.phase]||step.phase}`;
+      document.getElementById('miniStepTitle').textContent = step.title;
+      document.getElementById('miniStepExpl').innerHTML   = step.explanation;
+      document.getElementById('miniProgressFill').style.width = ((idx+1)/total*100)+'%';
+      document.getElementById('miniStepCounter').textContent  = `${idx+1} / ${total}`;
+
+      // Equivalence class chips
+      const banner = document.getElementById('miniClassBanner');
+      if (step.equivClasses && step.equivClasses.length > 0 && !['reach','remove'].includes(step.phase)) {
+        banner.style.display = 'block';
+        const cols = ['rgba(0,113,227,0.18)','rgba(52,199,89,0.18)','rgba(255,149,0,0.18)','rgba(175,82,222,0.18)','rgba(255,59,48,0.14)'];
+        const txts = ['#0071e3','#34c759','#ff9500','#af52de','#ff3b30'];
+        document.getElementById('miniClassChips').innerHTML = step.equivClasses.map((cls,i)=>{
+          const labels = cls.map(id=>mini.dfaStates.find(s=>s.id===id)?.label||id);
+          return `<span class="equiv-class-chip" style="background:${cols[i%cols.length]};color:${txts[i%txts.length]}">{${labels.join(', ')}}</span>`;
+        }).join('');
+      } else { banner.style.display = 'none'; }
+
+      // Pairs table
+      miniRenderPairsTable(step);
+
+      // Minimized DFA table
+      if (step.minStates && step.minStates.length > 0) {
+        miniRenderMinTable(step.minStates, step.minTransitions, step.minStart, step.minAccept);
+      } else {
+        document.getElementById('miniMinTableHead').innerHTML='<th>State</th>';
+        document.getElementById('miniMinTableBody').innerHTML='<tr><td colspan="99" style="color:var(--text-tertiary);padding:16px;text-align:center;">Minimization will populate this table</td></tr>';
+      }
+
+      // Canvas
+      miniRenderDFACanvas(step);
+      miniRenderMinCanvas(step);
+
+      // Summary
+      if (step.isComplete) {
+        miniShowSummary(step);
+        document.getElementById('miniStepPanel').classList.add('step-done-glow');
+      } else {
+        document.getElementById('miniSummaryCard').style.display = 'none';
+        document.getElementById('miniStepPanel').classList.remove('step-done-glow');
+      }
+    }
+
+    // ── Pairs triangular table ──
+    function miniRenderPairsTable(step) {
+      const ws = (step.workIds||[]).map(id=>mini.dfaStates.find(s=>s.id===id)).filter(Boolean);
+      if (ws.length < 2) {
+        document.getElementById('miniPairsWrap').innerHTML='<span style="color:var(--text-tertiary);font-size:12px;">Need ≥2 states for pairs table</span>';
+        return;
+      }
+      const n = ws.length;
+      let html = '<table class="pairs-tbl"><thead><tr><th></th>';
+      for (let j=0;j<n-1;j++) html+=`<th>${ws[j].label}</th>`;
+      html+='</tr></thead><tbody>';
+      for (let i=1;i<n;i++){
+        html+=`<tr><th style="font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text-secondary);padding:2px 6px;text-align:right;">${ws[i].label}</th>`;
+        for (let j=0;j<n-1;j++){
+          if (j>=i){ html+='<td class="pair-diag">—</td>'; continue; }
+          const pk = miniPairKey(ws[j].id, ws[i].id);
+          const isMarked  = step.markedPairs && step.markedPairs.has(pk);
+          const isFresh   = step.freshPairs  && step.freshPairs.has(pk);
+          const isChecking= step.checkingPair === pk;
+          let cls='pair-unknown', content='?';
+          if (isMarked) { cls=isFresh?'pair-fresh':'pair-marked'; content='✗'; }
+          else if (step.phase!=='reach'&&step.phase!=='remove') { cls=isChecking?'pair-checking':'pair-unmarked'; content=isChecking?'?':'✓'; }
+          html+=`<td class="${cls}" title="${ws[j].label} vs ${ws[i].label}">${content}</td>`;
+        }
+        html+='</tr>';
+      }
+      html+='</tbody></table>';
+      document.getElementById('miniPairsWrap').innerHTML=html;
+    }
+
+    // ── Minimized DFA δ table ──
+    function miniRenderMinTable(minStates, minTrans, minStart, minAccept){
+      const alpha = mini.dfaAlphabet.filter(s=>s!=='ε');
+      document.getElementById('miniMinTableHead').innerHTML='<th>State</th>'+alpha.map(s=>`<th>${s}</th>`).join('');
+      document.getElementById('miniMinTableBody').innerHTML=minStates.map(st=>{
+        const m=(st.id===minStart?'→ ':'')+(minAccept.has(st.id)?'* ':'');
+        const cells=alpha.map(sym=>{const t=minTrans.find(tr=>tr.from===st.id&&tr.symbol===sym);return`<td>${t?t.to:'—'}</td>`;}).join('');
+        return`<tr class="table-row-new"><td style="font-weight:700;">${m}${st.label}</td>${cells}</tr>`;
+      }).join('');
+    }
+
+    // ── Summary banner ──
+    function miniShowSummary(step){
+      document.getElementById('miniSummaryCard').style.display='block';
+      const origN=mini.dfaStates.length, minN=step.minStates.length, saved=origN-minN;
+      document.getElementById('miniSummaryBody').innerHTML=[
+        `<span class="nfa-stat-chip">Original: <strong style="margin-left:4px;">${origN} state(s)</strong></span>`,
+        `<span class="nfa-stat-chip">Minimal: <strong style="margin-left:4px;">${minN} state(s)</strong></span>`,
+        saved>0?`<span class="nfa-stat-chip" style="background:rgba(52,199,89,0.1);color:#34c759;">Saved: <strong style="margin-left:4px;">${saved} state(s)</strong></span>`
+               :`<span class="nfa-stat-chip" style="background:var(--accent-light);color:var(--accent);">Already minimal ✓</span>`,
+        `<span class="nfa-stat-chip">${step.minTransitions.length} transitions</span>`,
+      ].join('');
+    }
+
+    // ============================================================
+    //  CANVAS — shared drawing engine
+    // ============================================================
+    const MINI_NODE_R = 26;
+
+    function miniLayout(ids, canvas){
+      const n=ids.length; if(!n) return new Map();
+      const cx=canvas.width/2, cy=canvas.height/2;
+      const r=Math.min(canvas.width,canvas.height)*0.32;
+      const pos=new Map();
+      ids.forEach((id,i)=>{
+        const ang=(2*Math.PI*i)/n-Math.PI/2;
+        pos.set(id,{x:cx+r*Math.cos(ang),y:cy+r*Math.sin(ang)});
+      });
+      return pos;
+    }
+
+    function miniDrawArrowHead(ctx,x,y,dx,dy,sz,color){
+      ctx.fillStyle=color;
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+      ctx.lineTo(x-sz*dx+sz*0.4*(-dy), y-sz*dy+sz*0.4*dx);
+      ctx.lineTo(x-sz*dx-sz*0.4*(-dy), y-sz*dy-sz*0.4*dx);
+      ctx.closePath(); ctx.fill();
+    }
+
+    function miniDrawAutomaton(ctx, canvas, states, transitions, start, accept, positions, opts={}){
+      const dark = document.documentElement.getAttribute('data-theme')==='dark';
+      const C = dark
+        ? {node:'#3a3a3c',acc:'#30d158',text:'#f5f5f7',edge:'rgba(255,255,255,0.32)',bg:'#1c1c1e'}
+        : {node:'#e5e5ea',acc:'#34c759',text:'#1d1d1f',edge:'rgba(0,0,0,0.32)',bg:'#ffffff'};
+      const {greySet=new Set(),hlSet=new Set(),classGroups=null}=opts;
+      const CLASS_COLORS=['#0071e3','#34c759','#ff9500','#af52de','#ff3b30','#00c7be'];
+      const R=MINI_NODE_R;
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(!states.length){
+        ctx.fillStyle=dark?'rgba(255,255,255,0.18)':'rgba(0,0,0,0.22)';
+        ctx.font='13px Inter,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('Canvas will populate here',canvas.width/2,canvas.height/2);
+        ctx.textBaseline='alphabetic'; return;
+      }
+
+      // Helper: get class color for a state id
+      function stateClassColor(id){
+        if(!classGroups) return null;
+        for(let i=0;i<classGroups.length;i++) if(classGroups[i].includes(id)) return CLASS_COLORS[i%CLASS_COLORS.length];
+        return null;
+      }
+
+      // Draw edges
+      transitions.forEach(tr=>{
+        const fp=positions.get(tr.from), tp=positions.get(tr.to);
+        if(!fp||!tp) return;
+        const isG=greySet.has(tr.from)||greySet.has(tr.to);
+        const edgeCol=isG?(dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)'):C.edge;
+        ctx.strokeStyle=edgeCol; ctx.lineWidth=1.5; ctx.setLineDash([]);
+
+        if(tr.from===tr.to){
+          // Self-loop
+          const lx=fp.x, ly=fp.y-R;
+          ctx.beginPath(); ctx.arc(lx,ly-R*0.65,R*0.65,0,2*Math.PI); ctx.stroke();
+          ctx.fillStyle=isG?(dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'):C.text;
+          ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(tr.symbol,lx,ly-R*1.4); ctx.textBaseline='alphabetic'; return;
+        }
+        const dx=tp.x-fp.x, dy=tp.y-fp.y, dist=Math.sqrt(dx*dx+dy*dy);
+        const ux=dx/dist,uy=dy/dist;
+        const sx=fp.x+ux*R, sy=fp.y+uy*R, ex=tp.x-ux*R, ey=tp.y-uy*R;
+        const hasRev=transitions.some(t=>t.from===tr.to&&t.to===tr.from&&t.symbol);
+
+        if(hasRev){
+          const curv=28, nx=-uy,ny=ux;
+          const mx=(sx+ex)/2+nx*curv, my=(sy+ey)/2+ny*curv;
+          ctx.beginPath(); ctx.moveTo(sx,sy); ctx.quadraticCurveTo(mx,my,ex,ey); ctx.stroke();
+          const t2x=ex-mx,t2y=ey-my,t2l=Math.sqrt(t2x*t2x+t2y*t2y);
+          miniDrawArrowHead(ctx,ex,ey,t2x/t2l,t2y/t2l,9,edgeCol);
+          ctx.fillStyle=isG?(dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'):C.text;
+          ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(tr.symbol,mx,my-6); ctx.textBaseline='alphabetic';
+        } else {
+          ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke();
+          miniDrawArrowHead(ctx,ex,ey,ux,uy,9,edgeCol);
+          ctx.fillStyle=isG?(dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'):C.text;
+          ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(tr.symbol,(sx+ex)/2+uy*14,(sy+ey)/2-ux*14); ctx.textBaseline='alphabetic';
+        }
+      });
+
+      // Start arrow
+      if(start&&positions.has(start)){
+        const sp=positions.get(start);
+        ctx.strokeStyle=C.edge; ctx.lineWidth=2; ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(sp.x-R-28,sp.y); ctx.lineTo(sp.x-R,sp.y); ctx.stroke();
+        miniDrawArrowHead(ctx,sp.x-R,sp.y,1,0,9,C.edge);
+      }
+
+      // Draw nodes
+      states.forEach(st=>{
+        const pos=positions.get(st.id); if(!pos) return;
+        const isG=greySet.has(st.id), isHL=hlSet.has(st.id), isAcc=accept.has(st.id);
+        const cc=stateClassColor(st.id);
+
+        if(isAcc&&!isG){
+          ctx.beginPath(); ctx.arc(pos.x,pos.y,R+4,0,2*Math.PI);
+          ctx.strokeStyle=cc||(isHL?'#ff9500':C.acc); ctx.lineWidth=2; ctx.stroke();
+        }
+        let fill=isG?(dark?'#2c2c2e':'#d1d1d6'):(cc?cc+'28':(isHL?'rgba(255,149,0,0.18)':C.node));
+        ctx.beginPath(); ctx.arc(pos.x,pos.y,R,0,2*Math.PI);
+        ctx.fillStyle=fill; ctx.fill();
+        ctx.strokeStyle=cc||(isHL?'#ff9500':(isG?(dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.1)'):(dark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)')));
+        ctx.lineWidth=isHL?2.5:1.5; ctx.stroke();
+
+        ctx.fillStyle=isG?(dark?'rgba(255,255,255,0.22)':'rgba(0,0,0,0.28)'):C.text;
+        ctx.font='bold 12px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(st.label,pos.x,pos.y); ctx.textBaseline='alphabetic';
+      });
+    }
+
+    function miniRenderDFACanvas(step){
+      const canvas=document.getElementById('miniDfaCanvas');
+      if(!canvas) return; const ctx=canvas.getContext('2d');
+      if(mini.dfaPositions.size===0&&mini.dfaStates.length>0)
+        mini.dfaPositions=miniLayout(mini.dfaStates.map(s=>s.id),canvas);
+      miniDrawAutomaton(ctx,canvas,mini.dfaStates,mini.dfaTransitions,
+        mini.dfaStart,mini.dfaAccept,mini.dfaPositions,{
+          greySet: step.dfaGrey||new Set(),
+          hlSet:   step.dfaHL  ||new Set(),
+          classGroups: ['merge','build','done'].includes(step.phase)&&step.equivClasses ? step.equivClasses : null,
+        });
+    }
+
+    function miniRenderMinCanvas(step){
+      const canvas=document.getElementById('miniMinCanvas');
+      if(!canvas) return; const ctx=canvas.getContext('2d');
+      if(!step.minStates||step.minStates.length===0){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const dark=document.documentElement.getAttribute('data-theme')==='dark';
+        ctx.fillStyle=dark?'rgba(255,255,255,0.16)':'rgba(0,0,0,0.2)';
+        ctx.font='13px Inter,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('Minimized DFA will appear here',canvas.width/2,canvas.height/2);
+        ctx.textBaseline='alphabetic'; return;
+      }
+      if(mini.minPositions.size!==step.minStates.length){
+        mini.minPositions=miniLayout(step.minStates.map(s=>s.id),canvas);
+      }
+      miniDrawAutomaton(ctx,canvas,step.minStates,step.minTransitions,
+        step.minStart,step.minAccept,mini.minPositions,{});
+    }
+
+    // ============================================================
+    //  CONTROLS
+    // ============================================================
+    function miniStart(){
+      if(!mini.dfaStates.length||!mini.dfaStart){convToast('Load a DFA example first.','warn');return;}
+      mini.dfaPositions.clear(); mini.minPositions.clear();
+      mini.steps=miniGenSteps(); mini.stepIndex=-1;
+
+      // Pre-compute positions from final step
+      const dfaC=document.getElementById('miniDfaCanvas');
+      const minC=document.getElementById('miniMinCanvas');
+      if(dfaC) mini.dfaPositions=miniLayout(mini.dfaStates.map(s=>s.id),dfaC);
+      const last=mini.steps[mini.steps.length-1];
+      if(minC&&last.minStates.length) mini.minPositions=miniLayout(last.minStates.map(s=>s.id),minC);
+
+      document.getElementById('miniStartBtn').style.display='none';
+      document.getElementById('miniPlayControls').classList.replace('conv-hidden','conv-visible');
+      document.getElementById('miniSpeedControl').classList.replace('conv-hidden','conv-visible');
+      miniApplyStep(0);
+      convToast(`Minimization started — ${mini.steps.length} steps.`,'info',2500);
+    }
+
+    function miniReset(){
+      if(mini.autoInterval){clearInterval(mini.autoInterval);mini.autoInterval=null;}
+      mini.steps=[];mini.stepIndex=-1;mini.dfaPositions.clear();mini.minPositions.clear();
+      mini.minStates=[];mini.minTransitions=[];mini.minStart=null;mini.minAccept=new Set();
+
+      document.getElementById('miniStartBtn').style.display='block';
+      document.getElementById('miniPlayControls').classList.replace('conv-visible','conv-hidden');
+      document.getElementById('miniSpeedControl').classList.replace('conv-visible','conv-hidden');
+      document.getElementById('miniPlayIcon').style.display='block';
+      document.getElementById('miniPauseIcon').style.display='none';
+      document.getElementById('miniPlayBtn').classList.remove('active');
+      document.getElementById('miniPhaseBar').className='step-phase-bar step-phase-idle';
+      document.getElementById('miniStepBadge').innerHTML='✦ Ready';
+      document.getElementById('miniStepTitle').textContent='Select an example and press Minimize';
+      document.getElementById('miniStepExpl').innerHTML='The table-filling algorithm finds all pairs of <strong>distinguishable states</strong>. Remaining indistinguishable pairs are merged into the minimal DFA.';
+      document.getElementById('miniStepCounter').textContent='0 / 0';
+      document.getElementById('miniProgressFill').style.width='0%';
+      document.getElementById('miniClassBanner').style.display='none';
+      document.getElementById('miniPairsWrap').innerHTML='<span style="color:var(--text-tertiary);font-size:12px;">Pairs will appear once minimization starts</span>';
+      document.getElementById('miniMinTableHead').innerHTML='<th>State</th>';
+      document.getElementById('miniMinTableBody').innerHTML='<tr><td colspan="99" style="color:var(--text-tertiary);padding:16px;text-align:center;">Minimization will populate this table</td></tr>';
+      document.getElementById('miniSummaryCard').style.display='none';
+      document.getElementById('miniStepPanel').classList.remove('step-done-glow');
+
+      // Redraw original DFA
+      const dfaC=document.getElementById('miniDfaCanvas');
+      if(dfaC&&mini.dfaStates.length){
+        const ctx=dfaC.getContext('2d');
+        const pos=miniLayout(mini.dfaStates.map(s=>s.id),dfaC);
+        mini.dfaPositions=pos;
+        miniDrawAutomaton(ctx,dfaC,mini.dfaStates,mini.dfaTransitions,mini.dfaStart,mini.dfaAccept,pos,{});
+      }
+      // Clear min canvas
+      const minC=document.getElementById('miniMinCanvas');
+      if(minC){
+        const ctx=minC.getContext('2d');ctx.clearRect(0,0,minC.width,minC.height);
+        const dark=document.documentElement.getAttribute('data-theme')==='dark';
+        ctx.fillStyle=dark?'rgba(255,255,255,0.16)':'rgba(0,0,0,0.2)';
+        ctx.font='13px Inter,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('Minimized DFA will appear here',minC.width/2,minC.height/2);
+        ctx.textBaseline='alphabetic';
+      }
+    }
+
+    function miniNext(){ if(mini.stepIndex<mini.steps.length-1) miniApplyStep(mini.stepIndex+1); }
+    function miniPrev(){ if(mini.stepIndex>0) miniApplyStep(mini.stepIndex-1); }
+    function miniJumpToEnd(){ miniApplyStep(mini.steps.length-1); }
+
+    function miniToggleAutoPlay(){
+      if(mini.autoInterval){
+        clearInterval(mini.autoInterval);mini.autoInterval=null;
+        document.getElementById('miniPlayIcon').style.display='block';
+        document.getElementById('miniPauseIcon').style.display='none';
+        document.getElementById('miniPlayBtn').classList.remove('active');
+      } else {
+        document.getElementById('miniPlayIcon').style.display='none';
+        document.getElementById('miniPauseIcon').style.display='block';
+        document.getElementById('miniPlayBtn').classList.add('active');
+        mini.autoInterval=setInterval(()=>{
+          if(mini.stepIndex<mini.steps.length-1) miniNext(); else miniToggleAutoPlay();
+        },mini.autoDelay);
+      }
+    }
+
+    function miniUpdateSpeed(val){
+      const d=[1800,1200,900,550,250];
+      mini.autoDelay=d[parseInt(val)-1];
+      document.getElementById('miniSpeedVal')=['0.5×','0.8×','1×','1.5×','2×'][parseInt(val)-1];
+      if(mini.autoInterval){
+        clearInterval(mini.autoInterval);
+        mini.autoInterval=setInterval(()=>{if(mini.stepIndex<mini.steps.length-1)miniNext();else miniToggleAutoPlay();},mini.autoDelay);
+      }
+    }
+
+    function miniToggleConcepts(){
+      const p=document.getElementById('miniConceptPanel');
+      p.style.display=p.style.display==='none'?'block':'none';
+    }
+
+    // ============================================================
+    //  EXAMPLES
+    // ============================================================
+    function miniLoadExample(n){
+      mini.selectedExample=n;
+      [1,2,3,4].forEach(i=>document.getElementById('miniEx'+i)?.classList.toggle('active',i===n));
+
+      if(n===1){
+        // "Ends in 'a'" — B and D are equivalent (both accept, same transitions)
+        mini.dfaAlphabet=['a','b'];
+        mini.dfaStates=[{id:'A',label:'A'},{id:'B',label:'B'},{id:'C',label:'C'},{id:'D',label:'D'}];
+        mini.dfaTransitions=[
+          {from:'A',to:'B',symbol:'a'},{from:'A',to:'C',symbol:'b'},
+          {from:'B',to:'B',symbol:'a'},{from:'B',to:'C',symbol:'b'},
+          {from:'C',to:'D',symbol:'a'},{from:'C',to:'C',symbol:'b'},
+          {from:'D',to:'D',symbol:'a'},{from:'D',to:'C',symbol:'b'},
+        ];
+        mini.dfaStart='A'; mini.dfaAccept=new Set(['B','D']);
+      } else if(n===2){
+        // "Contains 'aa'" — already minimal
+        mini.dfaAlphabet=['a','b'];
+        mini.dfaStates=[{id:'A',label:'A'},{id:'B',label:'B'},{id:'C',label:'C'}];
+        mini.dfaTransitions=[
+          {from:'A',to:'B',symbol:'a'},{from:'A',to:'A',symbol:'b'},
+          {from:'B',to:'C',symbol:'a'},{from:'B',to:'A',symbol:'b'},
+          {from:'C',to:'C',symbol:'a'},{from:'C',to:'C',symbol:'b'},
+        ];
+        mini.dfaStart='A'; mini.dfaAccept=new Set(['C']);
+      } else if(n===3){
+        // All-accepting — all equivalent → 1 state
+        mini.dfaAlphabet=['a','b'];
+        mini.dfaStates=[{id:'A',label:'A'},{id:'B',label:'B'},{id:'C',label:'C'}];
+        mini.dfaTransitions=[
+          {from:'A',to:'B',symbol:'a'},{from:'A',to:'C',symbol:'b'},
+          {from:'B',to:'C',symbol:'a'},{from:'B',to:'A',symbol:'b'},
+          {from:'C',to:'A',symbol:'a'},{from:'C',to:'B',symbol:'b'},
+        ];
+        mini.dfaStart='A'; mini.dfaAccept=new Set(['A','B','C']);
+      } else if(n===4){
+        // State D is unreachable
+        mini.dfaAlphabet=['a','b'];
+        mini.dfaStates=[{id:'A',label:'A'},{id:'B',label:'B'},{id:'C',label:'C'},{id:'D',label:'D'}];
+        mini.dfaTransitions=[
+          {from:'A',to:'B',symbol:'a'},{from:'A',to:'C',symbol:'b'},
+          {from:'B',to:'B',symbol:'a'},{from:'B',to:'B',symbol:'b'},
+          {from:'C',to:'C',symbol:'a'},{from:'C',to:'C',symbol:'b'},
+          {from:'D',to:'A',symbol:'a'},{from:'D',to:'B',symbol:'b'}, // D unreachable
+        ];
+        mini.dfaStart='A'; mini.dfaAccept=new Set(['B']);
+      }
+
+      miniReset();
+      miniUpdateInputTable();
+    }
+
+    function miniUpdateInputTable(){
+      const alpha=mini.dfaAlphabet.filter(s=>s!=='ε');
+      document.getElementById('miniDfaTableHead').innerHTML='<th>State</th>'+alpha.map(s=>`<th>${s}</th>`).join('');
+      document.getElementById('miniDfaTableBody').innerHTML=mini.dfaStates.map(st=>{
+        const m=(st.id===mini.dfaStart?'→ ':'')+(mini.dfaAccept.has(st.id)?'* ':'');
+        const cells=alpha.map(sym=>{const t=mini.dfaTransitions.find(tr=>tr.from===st.id&&tr.symbol===sym);return`<td>${t?t.to:'—'}</td>`;}).join('');
+        return`<tr><td style="font-weight:700;">${m}${st.label}</td>${cells}</tr>`;
+      }).join('');
+    }
+
+    // Load from NFA→DFA converter result
+    function miniLoadFromConverter(){
+      if(!conv.dfaStatesMap||conv.dfaStatesMap.size===0){
+        convToast('Run the NFA→DFA conversion first, then use this button.','warn');return;
+      }
+      const entries=[...conv.dfaStatesMap.values()];
+      mini.dfaAlphabet=conv.nfaAlphabet.filter(s=>s!=='ε');
+      mini.dfaStates=entries.map(e=>({id:e.label,label:e.label}));
+      mini.dfaTransitions=conv.dfaAllTrans.map(t=>({from:t.from,to:t.to,symbol:t.symbol}));
+      mini.dfaStart=conv.dfaStartLabel;
+      mini.dfaAccept=new Set([...conv.dfaAccept]);
+      [1,2,3,4].forEach(i=>document.getElementById('miniEx'+i)?.classList.remove('active'));
+      miniReset(); miniUpdateInputTable();
+      convToast(`Loaded converted DFA (${mini.dfaStates.length} states) into Minimizer.`,'success');
+    }
+
+    // Send minimized DFA to simulator
+    function miniSendToSimulator(){
+      if(!mini.minStates.length){convToast('Run minimization first.','warn');return;}
+      saveToUndo();
+      const c=document.getElementById('graphCanvas');
+      const cx=c.width/2,cy=c.height/2,n=mini.minStates.length;
+      const r=Math.min(c.width,c.height)*0.32;
+      states=[];transitions=[];acceptStates.clear();
+      mini.minStates.forEach((st,i)=>{
+        const ang=(2*Math.PI*i)/n-Math.PI/2;
+        states.push({id:st.id,label:st.label,x:cx+r*Math.cos(ang),y:cy+r*Math.sin(ang)});
+        if(mini.minAccept.has(st.id)) acceptStates.add(st.id);
+      });
+      transitions=mini.minTransitions.map(t=>({from:t.from,to:t.to,symbol:t.symbol}));
+      startState=mini.minStart; stateCounter=mini.minStates.length;
+      document.getElementById('alphabetInput').value=mini.dfaAlphabet.filter(s=>s!=='ε').join(',');
+      updateAlphabet(); setMode('DFA'); showPage('simulator');
+      convToast('Minimal DFA loaded into Simulator!','success',3500);
+    }
+
+    // Export minimal DFA JSON
+    function miniExport(){
+      if(!mini.minStates.length){convToast('Run minimization first.','warn');return;}
+      const data={version:2,mode:'DFA',alphabet:mini.dfaAlphabet.filter(s=>s!=='ε'),
+        startState:mini.minStart,acceptStates:[...mini.minAccept],
+        states:mini.minStates.map(s=>({id:s.id,label:s.label,x:100,y:100})),
+        transitions:mini.minTransitions};
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='minimal-dfa.json';
+      document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+      convToast('Minimal DFA exported as minimal-dfa.json','success');
+    }
+
+    // ── Canvas resize ──
+    function miniResizeCanvases(){
+      [['miniDfaCanvas','miniDfaContainer'],['miniMinCanvas','miniMinContainer']].forEach(([cId,contId])=>{
+        const c=document.getElementById(cId),cont=document.getElementById(contId);
+        if(c&&cont){c.width=cont.clientWidth;c.height=cont.clientHeight;}
+      });
+      mini.dfaPositions.clear(); mini.minPositions.clear();
+      if(mini.steps.length>0&&mini.stepIndex>=0){
+        // Recompute positions
+        const dfaC=document.getElementById('miniDfaCanvas');
+        const minC=document.getElementById('miniMinCanvas');
+        if(dfaC) mini.dfaPositions=miniLayout(mini.dfaStates.map(s=>s.id),dfaC);
+        const last=mini.steps[mini.steps.length-1];
+        if(minC&&last.minStates.length) mini.minPositions=miniLayout(last.minStates.map(s=>s.id),minC);
+        miniApplyStep(mini.stepIndex);
+      } else if(mini.dfaStates.length){
+        const dfaC=document.getElementById('miniDfaCanvas');
+        if(dfaC){
+          const ctx=dfaC.getContext('2d');
+          const pos=miniLayout(mini.dfaStates.map(s=>s.id),dfaC);
+          mini.dfaPositions=pos;
+          miniDrawAutomaton(ctx,dfaC,mini.dfaStates,mini.dfaTransitions,mini.dfaStart,mini.dfaAccept,pos,{});
+        }
+      }
+    }
+
+    window.addEventListener('resize',()=>{
+      if(document.getElementById('page-minimize')?.classList.contains('active')) miniResizeCanvases();
+    });
+
+    // Auto-init when page becomes active
+    const _miniPage=document.getElementById('page-minimize');
+    if(_miniPage){
+      new MutationObserver(muts=>{
+        for(const m of muts){
+          if(m.target.id==='page-minimize'&&m.target.classList.contains('active')){
+            setTimeout(()=>{miniResizeCanvases();if(!mini.dfaStates.length)miniLoadExample(1);},60);
+          }
+        }
+      }).observe(_miniPage,{attributes:true,attributeFilter:['class']});
+    }
+
+    // Keyboard shortcuts (minimizer page)
+    document.addEventListener('keydown',e=>{
+      if(!document.getElementById('page-minimize')?.classList.contains('active')) return;
+      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+      switch(e.key){
+        case 'ArrowRight':e.preventDefault();miniNext();break;
+        case 'ArrowLeft': e.preventDefault();miniPrev();break;
+        case 'End':       e.preventDefault();miniJumpToEnd();break;
+        case ' ':e.preventDefault();mini.steps.length?miniToggleAutoPlay():miniStart();break;
+        case 'r':case 'R':if(!e.ctrlKey&&!e.metaKey){e.preventDefault();miniReset();}break;
+      }
+    });
+
+
 
     // ============================================================
     //  KEYBOARD SHORTCUTS (converter page only)
