@@ -1572,7 +1572,54 @@
             </div>
           </div>
 
-          <!-- Simulation Controls -->
+          <!-- ══ DFA → Minimize Banner (auto-shown in DFA mode with states) ══ -->
+          <div id="dfaMinimizeBanner" style="display:none;" class="mt-3">
+            <div style="
+              background: linear-gradient(135deg, rgba(175,82,222,0.10) 0%, rgba(255,55,95,0.08) 100%);
+              border: 1.5px solid rgba(175,82,222,0.28);
+              border-radius: 16px;
+              padding: 14px 18px;
+              animation: nfaBannerIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+            ">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div style="
+                    width:38px;height:38px;border-radius:10px;flex-shrink:0;
+                    background:linear-gradient(135deg,#af52de,#ff375f);
+                    display:flex;align-items:center;justify-content:center;
+                    box-shadow:0 4px 14px rgba(175,82,222,0.40);
+                  ">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                      <circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle>
+                      <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+                      <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+                      <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-bold text-sm leading-tight" style="color:var(--text-primary);">DFA ready to minimize</p>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                      <span class="nfa-stat-chip" id="miniBannerStatStates">0 states</span>
+                      <span class="nfa-stat-chip" id="miniBannerStatTrans">0 transitions</span>
+                    </div>
+                  </div>
+                </div>
+                <button onclick="simSendToMinimizer()" style="
+                  background:linear-gradient(135deg,#af52de,#ff375f);color:white;border:none;border-radius:10px;
+                  padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;
+                  display:flex;align-items:center;gap:8px;flex-shrink:0;
+                  transition:all 0.2s ease;box-shadow:0 4px 14px rgba(175,82,222,0.40);"
+                onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(175,82,222,0.55)';"
+                onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(175,82,222,0.40)';">
+                  Minimize It
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
           <div class="card mt-4 p-4">
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               <div class="flex-1">
@@ -3733,16 +3780,29 @@ q1, b, q2</textarea>
       if (!banner) return;
       const show = currentMode === 'NFA' && states.length > 0;
       banner.style.display = show ? 'block' : 'none';
-      if (!show) return;
+      if (show) {
+        // Update live stat chips
+        document.getElementById('bannerStatStates').textContent =
+          states.length + (states.length === 1 ? ' state' : ' states');
+        document.getElementById('bannerStatTrans').textContent =
+          transitions.length + (transitions.length === 1 ? ' transition' : ' transitions');
+        const aCount = acceptStates.size;
+        document.getElementById('bannerStatAccept').textContent =
+          aCount === 0 ? 'no accept states' : aCount + (aCount === 1 ? ' accept state' : ' accept states');
+      }
 
-      // Update live stat chips
-      document.getElementById('bannerStatStates').textContent =
-        states.length + (states.length === 1 ? ' state' : ' states');
-      document.getElementById('bannerStatTrans').textContent =
-        transitions.length + (transitions.length === 1 ? ' transition' : ' transitions');
-      const aCount = acceptStates.size;
-      document.getElementById('bannerStatAccept').textContent =
-        aCount === 0 ? 'no accept states' : aCount + (aCount === 1 ? ' accept state' : ' accept states');
+      // DFA minimize banner
+      const miniBanner = document.getElementById('dfaMinimizeBanner');
+      if (miniBanner) {
+        const showMini = currentMode === 'DFA' && states.length > 0;
+        miniBanner.style.display = showMini ? 'block' : 'none';
+        if (showMini) {
+          document.getElementById('miniBannerStatStates').textContent =
+            states.length + (states.length === 1 ? ' state' : ' states');
+          document.getElementById('miniBannerStatTrans').textContent =
+            transitions.length + (transitions.length === 1 ? ' transition' : ' transitions');
+        }
+      }
     }
 
     // FIX: oninput handler + guard against ε in alphabet
@@ -5688,6 +5748,34 @@ q1, b, q2</textarea>
       convToast('DFA loaded into the Simulator. Press ▶ to test input strings.','success',4000);
     }
 
+    // ============================================================
+    //  SIMULATOR → DFA MINIMIZER
+    // ============================================================
+    function simSendToMinimizer() {
+      if (typeof states === 'undefined' || states.length === 0) {
+        convToast('Build a DFA in the Simulator first.', 'warn'); return;
+      }
+      if (typeof currentMode !== 'undefined' && currentMode !== 'DFA') {
+        convToast('Switch the Simulator to DFA mode first, then click Minimize It.', 'warn'); return;
+      }
+      if (!startState) {
+        convToast('Set a start state before minimizing.', 'warn'); return;
+      }
+      mini.dfaStates      = states.map(s => ({ id: s.id, label: s.label }));
+      mini.dfaTransitions = transitions.map(t => ({ from: t.from, to: t.to, symbol: t.symbol }));
+      mini.dfaStart       = startState;
+      mini.dfaAccept      = new Set(acceptStates);
+      mini.dfaAlphabet    = alphabet.filter(s => s !== 'ε').length > 0
+                              ? alphabet.filter(s => s !== 'ε') : ['a','b'];
+      miniReset();
+      [1,2,3,4].forEach(i => document.getElementById('miniEx'+i)?.classList.remove('active'));
+      showPage('minimize');
+      convToast(
+        `✦ DFA (${mini.dfaStates.length} states) loaded into DFA Minimizer — press <strong>Minimize Step-by-Step</strong> to begin!`,
+        'success', 4500
+      );
+    }
+
     function convExportDFA() {
       if (!conv.dfaStatesMap.size) { convToast('Run the conversion first.','warn'); return; }
       const entries=[...conv.dfaStatesMap.values()];
@@ -6131,94 +6219,157 @@ q1, b, q2</textarea>
 
     function miniDrawAutomaton(ctx, canvas, states, transitions, start, accept, positions, opts={}){
       const dark = document.documentElement.getAttribute('data-theme')==='dark';
-      const C = dark
-        ? {node:'#3a3a3c',acc:'#30d158',text:'#f5f5f7',edge:'rgba(255,255,255,0.32)',bg:'#1c1c1e'}
-        : {node:'#e5e5ea',acc:'#34c759',text:'#1d1d1f',edge:'rgba(0,0,0,0.32)',bg:'#ffffff'};
-      const {greySet=new Set(),hlSet=new Set(),classGroups=null}=opts;
-      const CLASS_COLORS=['#0071e3','#34c759','#ff9500','#af52de','#ff3b30','#00c7be'];
-      const R=MINI_NODE_R;
+      const {greySet=new Set(), hlSet=new Set(), classGroups=null} = opts;
+      const CLASS_COLORS = ['#0071e3','#34c759','#ff9500','#af52de','#ff3b30','#00c7be'];
 
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      if(!states.length){
-        ctx.fillStyle=dark?'rgba(255,255,255,0.18)':'rgba(0,0,0,0.22)';
-        ctx.font='13px Inter,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText('Canvas will populate here',canvas.width/2,canvas.height/2);
-        ctx.textBaseline='alphabetic'; return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid (same as NFA→DFA section)
+      convGrid(ctx, canvas);
+
+      if (!states.length) {
+        const textCol = dark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.28)';
+        ctx.fillStyle = textCol;
+        ctx.font = '13px Inter,sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('Canvas will populate here', canvas.width/2, canvas.height/2);
+        ctx.textBaseline = 'alphabetic'; return;
       }
 
-      // Helper: get class color for a state id
-      function stateClassColor(id){
-        if(!classGroups) return null;
-        for(let i=0;i<classGroups.length;i++) if(classGroups[i].includes(id)) return CLASS_COLORS[i%CLASS_COLORS.length];
+      function stateClassColor(id) {
+        if (!classGroups) return null;
+        for (let i = 0; i < classGroups.length; i++)
+          if (classGroups[i].includes(id)) return CLASS_COLORS[i % CLASS_COLORS.length];
         return null;
       }
 
-      // Draw edges
-      transitions.forEach(tr=>{
-        const fp=positions.get(tr.from), tp=positions.get(tr.to);
-        if(!fp||!tp) return;
-        const isG=greySet.has(tr.from)||greySet.has(tr.to);
-        const edgeCol=isG?(dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)'):C.edge;
-        ctx.strokeStyle=edgeCol; ctx.lineWidth=1.5; ctx.setLineDash([]);
-
-        if(tr.from===tr.to){
-          // Self-loop
-          const lx=fp.x, ly=fp.y-R;
-          ctx.beginPath(); ctx.arc(lx,ly-R*0.65,R*0.65,0,2*Math.PI); ctx.stroke();
-          ctx.fillStyle=isG?(dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'):C.text;
-          ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(tr.symbol,lx,ly-R*1.4); ctx.textBaseline='alphabetic'; return;
-        }
-        const dx=tp.x-fp.x, dy=tp.y-fp.y, dist=Math.sqrt(dx*dx+dy*dy);
-        const ux=dx/dist,uy=dy/dist;
-        const sx=fp.x+ux*R, sy=fp.y+uy*R, ex=tp.x-ux*R, ey=tp.y-uy*R;
-        const hasRev=transitions.some(t=>t.from===tr.to&&t.to===tr.from&&t.symbol);
-
-        if(hasRev){
-          const curv=28, nx=-uy,ny=ux;
-          const mx=(sx+ex)/2+nx*curv, my=(sy+ey)/2+ny*curv;
-          ctx.beginPath(); ctx.moveTo(sx,sy); ctx.quadraticCurveTo(mx,my,ex,ey); ctx.stroke();
-          const t2x=ex-mx,t2y=ey-my,t2l=Math.sqrt(t2x*t2x+t2y*t2y);
-          miniDrawArrowHead(ctx,ex,ey,t2x/t2l,t2y/t2l,9,edgeCol);
-          ctx.fillStyle=isG?(dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'):C.text;
-          ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(tr.symbol,mx,my-6); ctx.textBaseline='alphabetic';
-        } else {
-          ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke();
-          miniDrawArrowHead(ctx,ex,ey,ux,uy,9,edgeCol);
-          ctx.fillStyle=isG?(dark?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'):C.text;
-          ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(tr.symbol,(sx+ex)/2+uy*14,(sy+ey)/2-ux*14); ctx.textBaseline='alphabetic';
-        }
+      // Build state objects with x/y from positions map (needed by convDrawEdge)
+      const stObjs = states.map(st => {
+        const pos = positions.get(st.id) || { x: canvas.width/2, y: canvas.height/2 };
+        return { id: st.id, label: st.label, x: pos.x, y: pos.y };
       });
 
-      // Start arrow
-      if(start&&positions.has(start)){
-        const sp=positions.get(start);
-        ctx.strokeStyle=C.edge; ctx.lineWidth=2; ctx.setLineDash([]);
-        ctx.beginPath(); ctx.moveTo(sp.x-R-28,sp.y); ctx.lineTo(sp.x-R,sp.y); ctx.stroke();
-        miniDrawArrowHead(ctx,sp.x-R,sp.y,1,0,9,C.edge);
-      }
+      // Group edges (same→to, collect symbols) for cleaner labels
+      const edgeMap = new Map();
+      transitions.forEach(tr => {
+        const k = tr.from + '|||' + tr.to;
+        if (!edgeMap.has(k)) edgeMap.set(k, { from: tr.from, to: tr.to, symbols: [] });
+        if (!edgeMap.get(k).symbols.includes(tr.symbol)) edgeMap.get(k).symbols.push(tr.symbol);
+      });
+      const groups = [...edgeMap.values()];
 
-      // Draw nodes
-      states.forEach(st=>{
-        const pos=positions.get(st.id); if(!pos) return;
-        const isG=greySet.has(st.id), isHL=hlSet.has(st.id), isAcc=accept.has(st.id);
-        const cc=stateClassColor(st.id);
+      // Count bidirectional pairs for curved offset
+      const pairCount = {};
+      groups.forEach(g => { const k = [g.from,g.to].sort().join('|||'); pairCount[k] = (pairCount[k]||0)+1; });
+      const pairSeen = {};
 
-        if(isAcc&&!isG){
-          ctx.beginPath(); ctx.arc(pos.x,pos.y,R+4,0,2*Math.PI);
-          ctx.strokeStyle=cc||(isHL?'#ff9500':C.acc); ctx.lineWidth=2; ctx.stroke();
+      // Draw edges using the polished convDrawEdge engine
+      groups.forEach(g => {
+        const fromSt = stObjs.find(s => s.id === g.from);
+        const toSt   = stObjs.find(s => s.id === g.to);
+        if (!fromSt || !toSt) return;
+
+        const isGreyed = greySet.has(g.from) || greySet.has(g.to);
+        const isHL     = hlSet.has(g.from) || hlSet.has(g.to);
+
+        const k = [g.from, g.to].sort().join('|||');
+        const isBi  = pairCount[k] >= 2;
+        const seenN = pairSeen[k] = (pairSeen[k]||0)+1;
+        const off   = g.from === g.to ? 0 : (isBi ? (seenN===1 ? 32 : -32) : 30);
+        const label = g.symbols.join(',');
+
+        // For greyed edges, temporarily override accent with a faded colour
+        if (isGreyed) {
+          // Draw manually with very faint colour
+          const fadedCol = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)';
+          const R2 = CONV_R;
+          ctx.strokeStyle = fadedCol; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+          if (g.from === g.to) {
+            const cw = canvas.width, ch = canvas.height;
+            const toCx = cw/2 - fromSt.x, toCy = ch/2 - fromSt.y;
+            const ang  = (Math.abs(toCx)<2&&Math.abs(toCy)<2) ? -Math.PI/2 : Math.atan2(toCy, toCx);
+            const sp2 = 0.55, loopR = R2 + 52;
+            const sX2 = fromSt.x + R2*Math.cos(ang-sp2), sY2 = fromSt.y + R2*Math.sin(ang-sp2);
+            const eX2 = fromSt.x + R2*Math.cos(ang+sp2), eY2 = fromSt.y + R2*Math.sin(ang+sp2);
+            const cX2 = fromSt.x + loopR*Math.cos(ang),  cY2 = fromSt.y + loopR*Math.sin(ang);
+            ctx.beginPath(); ctx.moveTo(sX2,sY2); ctx.quadraticCurveTo(cX2,cY2,eX2,eY2); ctx.stroke();
+            miniDrawArrowHead(ctx, eX2, eY2, Math.cos(Math.atan2(eY2-cY2,eX2-cX2)), Math.sin(Math.atan2(eY2-cY2,eX2-cX2)), 8, fadedCol);
+          } else {
+            const dx=toSt.x-fromSt.x, dy=toSt.y-fromSt.y;
+            const ang2=Math.atan2(dy,dx), o2=R2+4;
+            const sX2=fromSt.x+o2*Math.cos(ang2), sY2=fromSt.y+o2*Math.sin(ang2);
+            const eX2=toSt.x-o2*Math.cos(ang2),   eY2=toSt.y-o2*Math.sin(ang2);
+            const mx2=(fromSt.x+toSt.x)/2, my2=(fromSt.y+toSt.y)/2;
+            const perp=ang2+Math.PI/2;
+            const cX2=mx2+off*Math.cos(perp), cY2=my2+off*Math.sin(perp);
+            ctx.beginPath(); ctx.moveTo(sX2,sY2); ctx.quadraticCurveTo(cX2,cY2,eX2,eY2); ctx.stroke();
+            const aAng=Math.atan2(eY2-cY2,eX2-cX2);
+            miniDrawArrowHead(ctx, eX2, eY2, Math.cos(aAng), Math.sin(aAng), 8, fadedCol);
+          }
+          return;
         }
-        let fill=isG?(dark?'#2c2c2e':'#d1d1d6'):(cc?cc+'28':(isHL?'rgba(255,149,0,0.18)':C.node));
-        ctx.beginPath(); ctx.arc(pos.x,pos.y,R,0,2*Math.PI);
-        ctx.fillStyle=fill; ctx.fill();
-        ctx.strokeStyle=cc||(isHL?'#ff9500':(isG?(dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.1)'):(dark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)')));
-        ctx.lineWidth=isHL?2.5:1.5; ctx.stroke();
 
-        ctx.fillStyle=isG?(dark?'rgba(255,255,255,0.22)':'rgba(0,0,0,0.28)'):C.text;
-        ctx.font='bold 12px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText(st.label,pos.x,pos.y); ctx.textBaseline='alphabetic';
+        convDrawEdge(ctx, fromSt, toSt, label, isHL, off, canvas);
+      });
+
+      // Draw states using the polished convDrawState engine
+      stObjs.forEach(st => {
+        const isG   = greySet.has(st.id);
+        const isHL  = hlSet.has(st.id);
+        const isAcc = accept.has(st.id);
+        const cc    = stateClassColor(st.id);
+
+        if (isG) {
+          // Greyed-out state: faded look
+          const fadeFill   = dark ? '#2c2c2e' : '#d1d1d6';
+          const fadeStroke = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.15)';
+          const fadeText   = dark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.30)';
+          ctx.beginPath(); ctx.arc(st.x, st.y, CONV_R, 0, Math.PI*2);
+          ctx.fillStyle = fadeFill; ctx.fill();
+          ctx.strokeStyle = fadeStroke; ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.fillStyle = fadeText;
+          ctx.font = 'bold 12px Inter, sans-serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(st.label, st.x, st.y);
+          ctx.textBaseline = 'alphabetic';
+          return;
+        }
+
+        // Class-color override for equivalence groups
+        let hlMode = 'normal';
+        if (cc) {
+          // Draw with class color glow
+          ctx.save(); ctx.shadowColor = cc; ctx.shadowBlur = 16;
+          ctx.beginPath(); ctx.arc(st.x, st.y, CONV_R+5, 0, Math.PI*2);
+          ctx.fillStyle = cc + '30'; ctx.fill(); ctx.restore();
+          ctx.beginPath(); ctx.arc(st.x, st.y, CONV_R, 0, Math.PI*2);
+          ctx.fillStyle = cc + '35'; ctx.fill();
+          ctx.strokeStyle = cc; ctx.lineWidth = 2.5; ctx.stroke();
+          if (isAcc) {
+            ctx.beginPath(); ctx.arc(st.x, st.y, CONV_IR, 0, Math.PI*2);
+            ctx.strokeStyle = cc; ctx.lineWidth = 1.8; ctx.stroke();
+          }
+          const textCol = convCC('--text-primary') || '#1d1d1f';
+          ctx.fillStyle = textCol;
+          ctx.font = 'bold 12px Inter, sans-serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(st.label, st.x, st.y); ctx.textBaseline = 'alphabetic';
+          if (st.id === start) {
+            const textCol2 = convCC('--text-primary') || '#1d1d1f';
+            const ax = st.x - CONV_R - 28, ex2 = st.x - CONV_R - 5;
+            ctx.beginPath(); ctx.moveTo(ax, st.y); ctx.lineTo(ex2, st.y);
+            ctx.strokeStyle = textCol2; ctx.lineWidth = 2; ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(ex2, st.y);
+            ctx.lineTo(ex2 - 9*Math.cos(-Math.PI/6), st.y - 9*Math.sin(-Math.PI/6));
+            ctx.lineTo(ex2 - 9*Math.cos(Math.PI/6),  st.y - 9*Math.sin(Math.PI/6));
+            ctx.closePath(); ctx.fillStyle = textCol2; ctx.fill();
+          }
+          return;
+        }
+
+        if (isHL) hlMode = 'active';
+        convDrawState(ctx, st, st.id === start, isAcc, hlMode);
       });
     }
 
@@ -6695,7 +6846,7 @@ q1, b, q2</textarea>
 
         const baseOpacity = dark
           ? (0.28 + depth * 0.52 + Math.random() * 0.20)
-          : (0.06 + Math.random() * 0.14);
+          : (0.13 + Math.random() * 0.22);
 
         return {
           x:  Math.random() * W,
@@ -7014,7 +7165,7 @@ q1, b, q2</textarea>
               if (d < softDist) {
                 const [ra,ga,ba] = bokehRGB(a);
                 const [rb,gb,bb] = bokehRGB(b);
-                const alpha = (1 - d / softDist) * 0.055;
+                const alpha = (1 - d / softDist) * 0.10;
                 const grad  = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
                 grad.addColorStop(0,   `rgba(${ra},${ga},${ba},${alpha})`);
                 grad.addColorStop(1,   `rgba(${rb},${gb},${bb},${alpha})`);
@@ -7048,7 +7199,7 @@ q1, b, q2</textarea>
           } else {
             /* ── BOKEH ORB — layered soft gradient bubble ── */
             const pulse   = 0.72 + 0.28 * Math.sin(frame * p.pulseSpeed + p.pulsePhase);
-            const opacity = Math.min(p.baseOpacity * pulse, 0.50);
+            const opacity = Math.min(p.baseOpacity * pulse, 0.72);
             const [r, g, b] = bokehRGB(p);
 
             const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
