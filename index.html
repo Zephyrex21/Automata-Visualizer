@@ -7154,6 +7154,59 @@ q1, b, q2</textarea>
           }
         }
 
+        /* ── 4a-ii. Dark: mouse star-network ── */
+        if (dark && mouse.inside) {
+          const MOUSE_NET_RADIUS = 160;   // stars within this dist of cursor get linked
+          const STAR_LINK_DIST   = 130;   // max dist between two nearby stars to draw a link
+          const nearby = [];
+          for (const p of particles) {
+            const dx = p.x - mouse.x, dy = p.y - mouse.y;
+            if (dx*dx + dy*dy < MOUSE_NET_RADIUS * MOUSE_NET_RADIUS) nearby.push(p);
+          }
+          if (nearby.length > 1) {
+            /* Lines between nearby stars */
+            for (let i = 0; i < nearby.length; i++) {
+              for (let j = i + 1; j < nearby.length; j++) {
+                const a = nearby[i], b = nearby[j];
+                const ddx = a.x - b.x, ddy = a.y - b.y;
+                const d   = Math.sqrt(ddx*ddx + ddy*ddy);
+                if (d < STAR_LINK_DIST) {
+                  /* Fade with distance between stars AND distance from mouse */
+                  const distFade   = 1 - d / STAR_LINK_DIST;
+                  const aDist = Math.sqrt((a.x-mouse.x)**2 + (a.y-mouse.y)**2);
+                  const bDist = Math.sqrt((b.x-mouse.x)**2 + (b.y-mouse.y)**2);
+                  const mouseFade  = 1 - (Math.max(aDist, bDist) / MOUSE_NET_RADIUS);
+                  const alpha = distFade * mouseFade * 0.55;
+                  /* Gradient from one star to the other for a glowing feel */
+                  const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+                  grad.addColorStop(0, lineColorDark(alpha * 1.1));
+                  grad.addColorStop(0.5, lineColorDark(alpha * 0.75));
+                  grad.addColorStop(1, lineColorDark(alpha * 1.1));
+                  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+                  ctx.strokeStyle = grad; ctx.lineWidth = 0.85; ctx.stroke();
+                }
+              }
+            }
+            /* Lines from mouse cursor to nearest 5 stars */
+            const sorted = nearby.slice().sort((a, b) => {
+              const da = (a.x-mouse.x)**2 + (a.y-mouse.y)**2;
+              const db = (b.x-mouse.x)**2 + (b.y-mouse.y)**2;
+              return da - db;
+            });
+            const spoke = sorted.slice(0, 5);
+            for (const p of spoke) {
+              const d    = Math.sqrt((p.x-mouse.x)**2 + (p.y-mouse.y)**2);
+              const fade = (1 - d / MOUSE_NET_RADIUS) * 0.45;
+              const sg   = ctx.createLinearGradient(mouse.x, mouse.y, p.x, p.y);
+              sg.addColorStop(0,   lineColorDark(fade * 0.5));
+              sg.addColorStop(0.6, lineColorDark(fade * 0.9));
+              sg.addColorStop(1,   lineColorDark(fade * 1.2));
+              ctx.beginPath(); ctx.moveTo(mouse.x, mouse.y); ctx.lineTo(p.x, p.y);
+              ctx.strokeStyle = sg; ctx.lineWidth = 0.7; ctx.stroke();
+            }
+          }
+        }
+
         /* ── 4b. Light: very faint soft connecting threads ── */
         if (!dark) {
           const softDist = opts.connectionDist * 0.75;
